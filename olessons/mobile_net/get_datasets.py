@@ -20,10 +20,11 @@ val_trans = transforms.Compose([
 
 #train_dataset  =  datasets.ImageFolder(train_root_path,train_trans)
 val_dataset = datasets.ImageFolder(val_root_path,val_trans)
+test = datasets.ImageFolder(test_root_path,val_trans)
 
-Data.save_dict_info_to_yaml(val_dataset.class_to_idx,class_yaml_path)
+Data.save_dict_info_to_yaml(test.class_to_idx,class_yaml_path)
 
-#Data.save_dataset_into_pkl(val_dataset,val_pkl_path)
+Data.save_dataset_into_pkl(test,'fuck')
 
 
 

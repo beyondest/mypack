@@ -16,7 +16,7 @@ test_pkl_path = './test.pkl.gz'
 weights_savepath = './weights.pth'
 
 
-class_yaml_path = '../../datasets/classes.yaml'
+class_yaml_path = './classes.yaml'
 mean,std = [0.485,0.456,0.406],[0.229,0.224,0.225]
 
 batchsize = 20
