@@ -23,7 +23,7 @@ val_dataset = datasets.ImageFolder(val_root_path,val_trans)
 
 Data.save_dict_info_to_yaml(val_dataset.class_to_idx,class_yaml_path)
 
-Data.save_dataset_into_pkl(val_dataset,val_pkl_path)
+#Data.save_dataset_into_pkl(val_dataset,val_pkl_path)
 
 
 
