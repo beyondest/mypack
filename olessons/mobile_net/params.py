@@ -7,9 +7,9 @@ train_pkl_path = '../../datasets/train.pkl.gz'
 train_npz_path = '../../datasets/train.npz'
 
 val_root_path = '/mnt/d/datasets/petimages/val'
-val_tfrecords_path = '/mnt/d/datasets/record/pet_val_224.tfrecords'
+val_tfrecords_path = '../../datasets/pet_val_224.tfrecords'
 val_pkl_path = '../../datasets/val.pkl.gz'
-train_npz_path = '../../datasets/val.npz'
+val_npz_path = '../../datasets/val.npz'
 
 
 

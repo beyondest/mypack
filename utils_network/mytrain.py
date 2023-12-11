@@ -7,7 +7,7 @@ import time
 def train_classification(model:torch.nn.Module,
           train_dataloader,
           val_dataloader,
-          device,
+          device:None,
           epochs:int,
           criterion,
           optimizer,
@@ -40,10 +40,11 @@ def train_classification(model:torch.nn.Module,
         step = 0
         accuracy_nums = 0
         model.train()
-        
         for X,y in train_dataloader:
             model.zero_grad()
             logits = model(X.to(device))
+
+                
             loss = criterion(logits,y.to(device))
             loss.backward()
             optimizer.step()
@@ -58,6 +59,7 @@ def train_classification(model:torch.nn.Module,
         with torch.no_grad():
             for X,y in val_dataloader:
                 logits = model(X.to(device))
+                
                 #e.g.:logits.shape = (20,2)=(batchsize,class), torch.max(logits).shape = (2,20),[0] is value, [1].shape = (10,1),[1] =[0,1,...] 
                 #use torch.max on logits without softmax is same as torch.max(softmax(logits),dim=1)[1]
                 predict = torch.max(logits,dim=1)[1]

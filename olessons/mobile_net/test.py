@@ -18,20 +18,21 @@ print(f'Using device:{device}')
 
 train_path,val_path,weights_save_path = Data.get_path_info_from_yaml(yaml_path)
 
+
+hdataset = datasets.ImageFolder
 trans = transforms.Compose([
     transforms.ToTensor(),
     transforms.Resize(224)
 ])
 val_dataset = tfrecord.datasets(val_tfrecords_path,trans,[3,224,224],y_type=int)
 
-        
 val_dataloader = DataLoader(val_dataset,
                         batchsize,
                         shuffle=True,
-                        num_workers=2)
+                        num_workers=1)
 
 model = mobilenet_v2(num_classes=2)
-model.to(device)
+#model.to(device)
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(),lr=learning_rate)
 
