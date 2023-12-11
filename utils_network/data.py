@@ -671,7 +671,7 @@ class Data:
         print(f'dict_info saved to yamlfile in {yaml_path}')
     
     @classmethod
-    def save_dataset_into_pkl(cls,dataset:Dataset,pkl_save_path:str,open_mode:str = 'ab'):
+    def save_dataset_into_pkl(cls,dataset:Dataset,pkl_save_path:str,open_mode:str = 'wb'):
         """Only save X,y info
 
         Args:
@@ -680,16 +680,13 @@ class Data:
             open_mode (str, optional): _description_. Defaults to 'wb'.
         """
         print(f'ALL {len(dataset)} samples to save')
-        def save_dataset(sample):
-            X,y = sample
-            X = X.numpy()
-            y = y.numpy()
-            with gzip.open(pkl_save_path,open_mode) as file:
-                pickle.dump({'X':X,'y':y},file)
-            
-        save_tasks = [sample for sample in dataset]
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            executor.map(save_dataset,save_tasks)
+        x_data = []
+        y_data = []
+        for X,y in dataset:
+            x_data.append(X)
+            y_data.append(y)
+        with gzip.open(pkl_save_path,open_mode) as file:
+            pickle.dump((x_data,y_data),file)
         
         
         print(f'dataset saved to {pkl_save_path}')
