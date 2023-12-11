@@ -22,7 +22,7 @@ trans = transforms.Compose([
     transforms.ToTensor(),
     transforms.Resize(224)
 ])
-val_dataset = tfrecord.datasets(val_tfrecords_path,trans,[3,224,224],y_type=int)
+val_dataset = tfrecord.olddatasets(val_path,trans)
 
         
 val_dataloader = DataLoader(val_dataset,
