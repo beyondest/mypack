@@ -131,7 +131,7 @@ if __name__ == "__main__":
         print('deinit1',for_op)
     
     def f2(for_op):
-        print('fuck',for_op)
+        print('hello2',for_op)
     def deinitf2(for_op):
         print('deinit2',for_op)
     

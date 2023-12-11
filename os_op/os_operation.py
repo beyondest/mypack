@@ -4,9 +4,9 @@ from time import sleep,ctime
 import time
 
 from datetime import datetime
-
-
-
+import gzip
+import concurrent.futures
+from tqdm import tqdm
 def regular_name(root_path:str,
                  out_path:str,
                  start:int=0,
@@ -150,5 +150,58 @@ def get_current_datetime(if_show:bool = False):
     
     
     return current_date, hour, minute, second
+
+def split_list(input_list, num_segments)->list:
+    """Split list into num_segments part
+
+    Args:
+        input_list (_type_): _description_
+        num_segments (_type_): _description_
+
+    Returns:
+        list:list of new segments
+    """
+    segment_length = len(input_list) // num_segments
+    
+    remainder = len(input_list) % num_segments
+    
+    result = []
+    
+    start = 0
+    for i in range(num_segments):
+        # one num of remainder, one segment is longer 1 than normal segment
+        length = segment_length + 1 if i < remainder else segment_length
+        
+        result.append(input_list[start:start + length])
+        
+        start += length
+    
+    return result
+
+def merge_files(file_path_list:list, merged_file_path:str ,using_gzip:bool = True):
+    
+    if using_gzip:
+        with gzip.open(merged_file_path,'wb') as merged_file:
+            for file_path in file_path_list:
+                with gzip.open(file_path,'rb') as each_file:
+                    merged_file.write(each_file.read())
+    else:
+        with open(merged_file_path,'wb') as merged_file:
+            for file_path in file_path_list:
+                with open(file_path,'rb') as each_file:
+                    merged_file.write(each_file.read())
+    
+    
+def delete_file(file_path:str):
+    try:
+        os.remove(file_path)
+        print(f'remove:{file_path}')
+    except FileNotFoundError:
+        print(f'file {file_path} do not exist')
+    except:
+        print(f'something wrong when remove file {file_path}')
+        
+
+
 
 

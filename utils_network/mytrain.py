@@ -2,8 +2,8 @@ import torch
 import sys
 sys.path.append('..')
 import os_op.os_operation as oso
-
-
+import os
+import time
 def train_classification(model:torch.nn.Module,
           train_dataloader,
           val_dataloader,
@@ -19,7 +19,7 @@ def train_classification(model:torch.nn.Module,
     '''
     if show_step_interval<0, will not show step
     '''
-    
+    t1 = time.perf_counter()
     step_show =True
     epoch_show = True
     if show_step_interval <0:
@@ -28,6 +28,9 @@ def train_classification(model:torch.nn.Module,
         epoch_show = False
     val_sample_nums = len(val_dataloader)
     train_sample_nums = len(val_dataloader)
+        
+        
+    save_path = os.path.split(weights_save_path)[0]
         
     print(f'train_sampls:{train_sample_nums}, val_sample_nums:{val_sample_nums}')
     
@@ -73,7 +76,16 @@ def train_classification(model:torch.nn.Module,
         
         
         if weights_save_path is not None:
+        
             if epoch%save_interval == 0:
-                print(f'model save to {weights_save_path}')
-                torch.save(model.state_dict(),weights_save_path)
-    
+                name = f'weights.{accuracy}.{epoch}.pth'
+                current_save_path = os.path.join(save_path,name)
+                if not os.path.exists(save_path):
+                    os.mkdir(save_path)
+                
+                print(f'model.state_dict save to {current_save_path}')
+                torch.save(model.state_dict(),current_save_path)
+    t2 = time.perf_counter()
+    t = t2-t1
+    print(f"Training over,Spend time:{t:.2f}s")
+    print(f"Best accuracy : {best_accuracy} ")

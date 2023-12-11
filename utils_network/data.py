@@ -20,9 +20,10 @@ import gzip
 import pickle
 from torch.utils.data import TensorDataset
 from tqdm import tqdm
-
 from concurrent.futures import ProcessPoolExecutor
 import concurrent.futures
+import fcntl
+import threading
 def tp(*args):
     for i in args:
         print(type(i))
@@ -555,6 +556,7 @@ class Data:
                     print('min:',i.min())
                     print('content:',i)
                 count+=1
+            
                 
                 
 
@@ -671,77 +673,180 @@ class Data:
         print(f'dict_info saved to yamlfile in {yaml_path}')
     
     @classmethod
-    def save_dataset_into_pkl(cls,dataset:Dataset,pkl_save_path:str,open_mode:str = 'wb'):
-        """Only save X,y info
+    def save_dataset_to_pkl(cls,
+                            dataset:Dataset,
+                            pkl_path:str,
+                            if_multi:bool = False,
+                            max_workers:int = 5):
+        """Use 'ab' to write pkl.gz file
 
         Args:
             dataset (Dataset): _description_
-            pkl_save_path (str): _description_
-            open_mode (str, optional): _description_. Defaults to 'wb'.
+            pkl_path (str): _description_
+            if_multi (bool, optional): _description_. Defaults to True.
         """
         print(f'ALL {len(dataset)} samples to save')
-        x_data = []
-        y_data = []
-        for X,y in dataset:
-            x_data.append(X)
-            y_data.append(y)
-        with gzip.open(pkl_save_path,open_mode) as file:
-            pickle.dump((x_data,y_data),file)
+
+        global_lock = threading.Lock()
+        proc_bar = tqdm(len(dataset),desc="Saving to pkl:")
+        def save_sample(sample, file_path):
+            while global_lock.locked():
+                time.sleep(0.02)
+                continue
+            global_lock.acquire()
+            
+            x, y = sample
+            
+            proc_bar.update(1)
+            with gzip.open(file_path, 'ab') as f:
+                
+                pickle.dump((np.asanyarray(x),np.asanyarray(y)), f)
+            global_lock.release() 
+                
+        if if_multi:
+               
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:  
+                futures = [executor.submit(save_sample, sample, pkl_path) for sample in dataset]
+
+                concurrent.futures.wait(futures)
+        else:
+            for sample in dataset:
+                save_sample(sample,pkl_path)
         
-        
-        print(f'dataset saved to {pkl_save_path}')
+        proc_bar.close()
+        print(f'dataset saved to {pkl_path}')
         print('Notice: when you need to open it, please include your dataset defination in open code')
+
+    
+    @classmethod
+    def save_dataset_to_pkl2(cls,
+                             dataset,
+                             pkl_path,
+                             max_workers):
+        length = len(dataset)
+        print(f'ALL {length} samples to save')
+        all_sample_list = [i for i in dataset]
+        segment_list = oso.split_list(all_sample_list,max_workers)
+        temp_file_path_list= [f'temp{i}.pkl.gz' for i in range(max_workers)]
+        
+        params_list = list(zip(segment_list,temp_file_path_list))
+        proc_bar = tqdm(length,desc="Saving to pkl:")
+        
+        def save_sample(part_sample_list, file_path):
+            for x,y in part_sample_list:
+                proc_bar.update(1)
+                with gzip.open(file_path, 'ab') as f:
+                    
+                    pickle.dump((np.asanyarray(x),np.asanyarray(y)), f)
+        
+        
+               
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:  
+            futures = [executor.submit(save_sample, part_sample_list, pkl_path) for part_sample_list,pkl_path in params_list]
+
+            concurrent.futures.wait(futures)
+
+        oso.merge_files(temp_file_path_list,pkl_path)
+        for i in temp_file_path_list:
+            oso.delete_file(i)
+        
+        proc_bar.close()
+        print(f'dataset saved to {pkl_path}')
+        print('Notice: when you need to open it, please include your dataset defination in open code')
+
+    @classmethod
+    def save_dataset_to_npz(cls,
+                            dataset,
+                            npz_path:str
+                            ):
+        print(f'ALL {len(dataset)} samples to save')
+        
+        proc_bar = tqdm(len(dataset),"changing dataset type to ndarray:")
+        X_list = []
+        y_list = []
+        for X,y in dataset:
+            X_list.append(X)
+            y_list.append(y)
+            proc_bar.update(1)
+        X = np.asanyarray(X_list)
+        y = np.asanyarray(y_list)
+        np.savez_compressed(npz_path,X = X,y = y)
+        proc_bar.close()
+        print(f'dataset saved to {npz_path}')
+        print('Notice: when you need to open it, please include your dataset defination in open code')
+    
+    
+    
+    @classmethod
+    def get_dataset_from_npz(cls,
+                             npz_dataset_obj:Dataset,
+                             npz_path:str):
+        oso.get_current_datetime(True)
+        data = np.load(npz_path)
+        X = torch.from_numpy(data['X'])
+        y = torch.from_numpy(data['y'])
+        dataset = TensorDataset(X,y)
+        print(f'{npz_path}   npz dataset length is {len(dataset)}')
+        oso.get_current_datetime(True)
+        return dataset
+
+        
+            
+            
     
     @classmethod
     def get_dataset_from_pkl(cls,
                              pkl_dataset_obj:Dataset,
                              pkl_save_path:str,
                              open_mode:str = 'rb')->Dataset:
-        """get X,y from pkl.gz and then make a tensor dataset, only work with save_dataset_to_pkl
+        def load_data(file_path):
+            proc_bar = tqdm(None,desc=f"Reading from {file_path}:")
+            
+            with gzip.open(file_path, open_mode) as f:
+                data = []
+                while True:
+                    
+                    
+                    try:
+                        sample = pickle.load(f)
+                        data.append(sample)
+                        proc_bar.update(1)
+                    except EOFError:
+                        proc_bar.close()
+                        print('Finish reading')
+                        break
+                    
+            return data
+        loaded_data = load_data(pkl_save_path)
+        x = np.asanyarray([sample[0] for sample in loaded_data])
+        y = np.asanyarray([sample[1] for sample in loaded_data])
+        X = torch.tensor(x)
+        y = torch.tensor(y)
+
+        d = TensorDataset(X,y)
+        return d
+    
+    
+    
+    @classmethod
+    def get_path_info_from_yaml(cls,yaml_path:str)->tuple:
+        """get path info from yaml 
 
         Args:
-            pkl_dataset_obj (Dataset): _description_
-            pkl_save_path (str): _description_
-            open_mode (str, optional): _description_. Defaults to 'rb'.
+            yaml_path (str): _description_
 
         Returns:
-            Dataset: _description_
+            train_path,val_path,weights_save_path
         """
-        print(f'Reading pkl file:')
-        oso.get_current_datetime(True)
-        with gzip.open(pkl_save_path,open_mode) as file:
-            X_list,y_list = pickle.load(file)
+        info =Data.get_file_info_from_yaml(yaml_path)
+        train_path = info['train_path']
+        val_path = info['val_path']
+        weights_save_path = info['weights_save_path']
+        return train_path,val_path,weights_save_path
         
-        X = np.asanyarray(X_list)
-        y = np.asanyarray(y_list)
-            
-            
-        
-        dataset = TensorDataset(torch.tensor(X),torch.tensor(y))
-        print('Reading over')
-        oso.get_current_datetime(True)
-        return dataset
-    
-    
-        
-        
-def read_dataset(paramlist):
-                
-    with gzip.open(paramlist[0],'rb') as file:
-        while True:
-            try:
-                data = pickle.load(file)
-                X = torch.from_numpy(data['X'])
-                y = torch.from_numpy(data['y'])
-                paramlist[1].update(1)
-                return [X,y]
-            except EOFError:
-                break     
-        
-    
-    
-    
-            
+         
+      
+           
             
         
 

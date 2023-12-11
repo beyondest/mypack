@@ -16,10 +16,11 @@ from utils_network.mymodel import *
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'Using device:{device}')
 
+train_path,val_path,weights_save_path = Data.get_path_info_from_yaml(yaml_path)
 
 
 hdataset = datasets.ImageFolder
-val_dataset = Data.get_dataset_from_pkl(hdataset,val_pkl_path)
+val_dataset = Data.get_dataset_from_pkl(hdataset,val_path)
         
 val_dataloader = DataLoader(val_dataset,
                         batchsize,
@@ -39,10 +40,12 @@ train_classification(model,
                      epochs,
                      criterion,
                      optimizer,
-                     weights_savepath,
+                     weights_save_path,
                      save_interval=3,
                      show_step_interval=4,
                      show_epoch_interval=1)
+
+
 
 
 

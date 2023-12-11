@@ -2,7 +2,7 @@ import tensorflow as tf
 from torch.utils.data import Dataset,DataLoader
 import numpy as np
 import torch
-
+from tqdm import tqdm
 
 class tfrecord():
     def __init__(self) -> None:
@@ -23,10 +23,19 @@ class tfrecord():
             save_X_type (type, int | float | bytes ): _description_. Defaults to float.
             save_y_type (type, int | float | bytes ): _description_. Defaults to float.
         """
+        for X,y in dataset:
+            
+            X = np.asanyarray(X)
+            y = np.asanyarray(y)
+            print(f'saving X shape is {X.shape}, type is {save_X_type},\n y shape is {y.shape}, type is {save_y_type}')
+            break
+        
         with tf.io.TFRecordWriter(records_save_path) as writer:
+            proc_bar = tqdm(len(dataset),"saving to tfrecords:")
             for X,y in dataset:
                 numpy_X = np.asanyarray(X)
                 numpy_y = np.asanyarray(y)
+                proc_bar.update(1)
                 if save_X_type == float:
                     
                     X_feature = tf.train.Feature(float_list = tf.train.FloatList(value = numpy_X.flatten()))
@@ -46,10 +55,9 @@ class tfrecord():
                 example = tf.train.Example(features=feature)
                 
                 writer.write(example.SerializeToString())
-                print(f'tfrecords save to {records_save_path}')
-                print(f'X shape is {numpy_X.shape}, X dtype is {save_X_type}')
-                print(f'y shape is {numpy_y.shape}, y dtype is {save_y_type}')
                 
+            print(f'tfrecords save to {records_save_path}')
+ 
 
     
     
@@ -131,7 +139,8 @@ class tfrecord():
             return X,y
     
     class datasets(Dataset):
-        def __init__(self,tfrecord_path:str,
+        def __init__(self,
+                     tfrecord_path:str,
                      transforms,
                      X_shape:list,
                      y_shape:list =[1],
