@@ -183,18 +183,19 @@ class tfrecord():
             }
             self.parsed_dataset = self.tf_dataset.map(self._parse_tfrecord_fn)
 
-
-            
         def __len__(self):
             return len(list(self.parsed_dataset))
 
         def __getitem__(self, idx):
             sample = next(iter(self.parsed_dataset.take(idx + 1).skip(idx)))
             X = np.asanyarray(sample['X'])
-            y = np.asanyarray(sample['y'])
+            y = np.asanyarray(sample['y']).reshape(-1)
             X = self.transforms(X)
             return X, y
 
         def _parse_tfrecord_fn(self, example_proto):
             example = tf.io.parse_single_example(example_proto, self.feature_description)
             return {'X': example['X'], 'y': example['y']}
+
+        
+        

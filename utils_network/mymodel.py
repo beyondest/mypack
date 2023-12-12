@@ -113,7 +113,6 @@ class mobilenet_v2(torch.nn.Module):
             [6,            160,     3,             2],
             [6,            320,     1,             1]
         ]
-        print(self.first_channels)
         self.conv1 = torch.nn.Conv2d(3,
                                      self.first_channels,
                                      kernel_size=3,

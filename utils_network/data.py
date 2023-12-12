@@ -24,6 +24,8 @@ from concurrent.futures import ProcessPoolExecutor
 import concurrent.futures
 import fcntl
 import threading
+import h5py
+
 def tp(*args):
     for i in args:
         print(type(i))
@@ -678,7 +680,7 @@ class Data:
                             pkl_path:str,
                             if_multi:bool = False,
                             max_workers:int = 5):
-        """Use 'ab' to write pkl.gz file
+        """Use 'ab' to write pkl.gz file, first data is length of dataset
 
         Args:
             dataset (Dataset): _description_
@@ -689,6 +691,10 @@ class Data:
 
         global_lock = threading.Lock()
         proc_bar = tqdm(len(dataset),desc="Saving to pkl:")
+        
+        with gzip.open(pkl_path,'ab') as f:
+            pickle.dump(len(dataset),f)
+            
         def save_sample(sample, file_path):
             while global_lock.locked():
                 time.sleep(0.02)
@@ -699,7 +705,6 @@ class Data:
             
             proc_bar.update(1)
             with gzip.open(file_path, 'ab') as f:
-                
                 pickle.dump((np.asanyarray(x),np.asanyarray(y)), f)
             global_lock.release() 
                 
@@ -723,6 +728,13 @@ class Data:
                              dataset,
                              pkl_path,
                              max_workers):
+        """Dont use this now
+
+        Args:
+            dataset (_type_): _description_
+            pkl_path (_type_): _description_
+            max_workers (_type_): _description_
+        """
         length = len(dataset)
         print(f'ALL {length} samples to save')
         all_sample_list = [i for i in dataset]
@@ -775,8 +787,92 @@ class Data:
         print(f'dataset saved to {npz_path}')
         print('Notice: when you need to open it, please include your dataset defination in open code')
     
-    
-    
+    @classmethod
+    def save_dataset_to_hdf5(cls,
+                             dataset:Dataset,
+                             hdf5_path:str):
+        print(f'ALL {len(dataset)} samples to save')
+        proc_bar = tqdm(total=len(dataset), desc="Saving to HDF5:")
+        for X,y in dataset:
+            X = np.asanyarray(X)
+            y = np.asanyarray(y) 
+            
+            X_shape = X.shape
+            y_shape = y.shape
+            X_dtype = X.dtype
+            y_dtype = y.dtype
+            break
+
+        with h5py.File(hdf5_path,'w') as hf:
+            X_group = hf.create_group('X')
+            y_group = hf.create_group('y')
+            X_group.attrs['shape'] = f'{X_shape}'
+            X_group.attrs['dtype'] = f'{X_dtype}'
+            y_group.attrs['shape'] = f'{y_shape}'
+            y_group.attrs['dtype'] = f'{y_dtype}'
+            hf.attrs['length'] = len(dataset)
+            
+            if X_shape ==() and y_shape == ():
+                for i,sample in enumerate(dataset):
+                    X,y = sample
+                    X = np.asanyarray(X).reshape(-1)
+                    y = np.asanyarray(y).reshape(-1)
+                    X_group.create_dataset(f'{i}',data=X)
+                    y_group.create_dataset(f'{i}',data=y)
+                    proc_bar.update(1)
+            elif X_shape == () and y_shape != ():
+                for i,sample in enumerate(dataset):
+                    X,y = sample
+                    X = np.asanyarray(X).reshape(-1)
+                    y = np.asanyarray(y)
+                    X_group.create_dataset(f'{i}',data=X)
+                    y_group.create_dataset(f'{i}',data=y)
+                    proc_bar.update(1)
+            elif X_shape != () and  y_shape == ():
+                for i,sample in enumerate(dataset):
+                    X,y = sample
+                    X = np.asanyarray(X)
+                    y = np.asanyarray(y).reshape(-1)
+                    X_group.create_dataset(f'{i}',data=X)
+                    y_group.create_dataset(f'{i}',data=y)
+                    proc_bar.update(1)
+            else:
+                for i,sample in enumerate(dataset):
+                    X,y = sample
+                    X = np.asanyarray(X)
+                    y = np.asanyarray(y)
+                    X_group.create_dataset(f'{i}',data=X)
+                    y_group.create_dataset(f'{i}',data=y)
+                    proc_bar.update(1)
+
+        proc_bar.close()
+        print(f"Dataset saved to HDF5 file {hdf5_path}.")
+        
+    @classmethod
+    def get_dataset_from_hdf5(cls,
+                             hdf5_path:str,
+                             open_mode:str = 'r')->Dataset:
+        
+        X_list = []
+        y_list = []
+        with h5py.File(hdf5_path,open_mode) as hf:
+            length = hf.attrs['length']
+            
+            print(f'All {length} samples to read')
+            proc_bar = tqdm(length,'Load hdf5 file:')
+
+            for i in range(length):
+                
+                X_list.append(hf['X'][f'{i}'][:])
+                y_list.append(hf['y'][f'{i}'][:])
+                proc_bar.update(1)
+            proc_bar.close()
+            print('Reading over')
+            
+        X = np.asanyarray(X_list)
+        y = np.asanyarray(y_list)
+        return TensorDataset(torch.from_numpy(X),torch.from_numpy(y))
+       
     @classmethod
     def get_dataset_from_npz(cls,
                              npz_dataset_obj:Dataset,
@@ -790,9 +886,6 @@ class Data:
         oso.get_current_datetime(True)
         return dataset
 
-        
-            
-            
     
     @classmethod
     def get_dataset_from_pkl(cls,
@@ -800,13 +893,11 @@ class Data:
                              pkl_save_path:str,
                              open_mode:str = 'rb')->Dataset:
         def load_data(file_path):
-            proc_bar = tqdm(None,desc=f"Reading from {file_path}:")
-            
             with gzip.open(file_path, open_mode) as f:
                 data = []
+                length = pickle.load(f)
+                proc_bar = tqdm(length,desc=f"Reading from {file_path}:")
                 while True:
-                    
-                    
                     try:
                         sample = pickle.load(f)
                         data.append(sample)
@@ -815,7 +906,6 @@ class Data:
                         proc_bar.close()
                         print('Finish reading')
                         break
-                    
             return data
         loaded_data = load_data(pkl_save_path)
         x = np.asanyarray([sample[0] for sample in loaded_data])
@@ -825,7 +915,6 @@ class Data:
 
         d = TensorDataset(X,y)
         return d
-    
     
     
     @classmethod
@@ -845,8 +934,44 @@ class Data:
         return train_path,val_path,weights_save_path
         
          
-      
-           
+class dataset_hdf5(Dataset):
+    def __init__(self,hdf5_path:str) -> None:
+        super().__init__()
+        
+        self.path = hdf5_path
+        with h5py.File(hdf5_path,'r') as hf:
+            self.length = hf.attrs['length']
+            
+    def __len__(self):
+        return self.length
+    
+    def __getitem__(self, index)->tuple:
+        with h5py.File(self.path,'r') as hf:
+            X = hf['X'][f'{index}'][:]
+            y = hf['y'][f'{index}'][:]
+        return torch.from_numpy(X),torch.from_numpy(y)
+            
+class dataset_pkl(Dataset):
+    def __init__(self,pkl_path:str) -> None:
+        super().__init__()
+        
+        self.path = pkl_path
+        with gzip.open(pkl_path,'rb') as f:
+            self.length = pickle.load(f)
+            self.position = f.tell()
+        
+            
+    def __len__(self):
+        return self.length
+    
+    def __getitem__(self, index)->tuple:
+        with gzip.open(self.path,'rb') as f:
+            f.seek(self.position)
+            X,y = pickle.load(f)
+            self.position = f.tell()
+        
+        return torch.from_numpy(X),torch.from_numpy(y)
+   
             
         
 
