@@ -28,7 +28,7 @@ weights_savelocal_path = './weights'
 flip_probability = 0.5
 mean,std = [0.485,0.456,0.406],[0.229,0.224,0.225]
 
-batchsize = 50
+batchsize = 2
 epochs = 20
 learning_rate = 0.0001
 
