@@ -14,16 +14,15 @@ val_pkl_path = '../../datasets/val.pkl.gz'
 val_npz_path = '../../datasets/val.npz'
 val_hdf5_path = '../../datasets/val.hdf5'
 
-test_hdf5_path = './test.hdf5'
-test_rootpath = '/mnt/d/datasets/petimages/test'
-
 
 
 
 
 class_yaml_path = './classes.yaml'
 yaml_path = './path.yaml'
-weights_savelocal_path = './weights'
+
+log_save_local_path = './local_log'
+weights_savelocal_path = './local_weights'
 
 predict_cat_path = './res/cat.1.jpg'
 predict_dog_path = './res/dog3.jpg'
@@ -35,13 +34,13 @@ flip_probability = 0.5
 mean,std = [0.485,0.456,0.406],[0.229,0.224,0.225]
 train_trans = transforms.Compose([
     transforms.ToTensor(),
-    transforms.RandomResizedCrop(224),
+    transforms.RandomResizedCrop(224,antialias=True),
     transforms.RandomHorizontalFlip(flip_probability),
     transforms.Normalize(mean,std)
 ])
 val_trans = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Resize(256),
+    transforms.Resize(256,antialias=True),
     transforms.CenterCrop(224),
     transforms.Normalize(mean,std)
 ])

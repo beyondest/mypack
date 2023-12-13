@@ -8,29 +8,18 @@ from utils_network.data import *
 from torchvision import transforms,datasets
 from torch.utils.data import Dataset,DataLoader
 import os_op.os_operation as oso
-from actions import *
+from utils_network.actions import *
 from utils_network.mymodel import *
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'Using device:{device}')
 
+train_path,val_path,weights_save_path,log_save_folder = Data.get_path_info_from_yaml(yaml_path)
 
 
-hdataset = datasets.ImageFolder
-val_trans = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Resize((224,224))
-])
-
-train_trans = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.RandomResizedCrop(224),
-    transforms.RandomHorizontalFlip(flip_probability),
-    transforms.Normalize(mean,std)
-])
-val_dataset = dataset_hdf5(val_hdf5_path)
-train_dataset = dataset_hdf5(val_hdf5_path)
+val_dataset = datasets.ImageFolder(val_root_path,val_trans)
+train_dataset = datasets.ImageFolder(train_root_path,train_trans)
 
 
 val_dataloader = DataLoader(val_dataset,
@@ -58,9 +47,10 @@ train_classification(model,
                      criterion,
                      optimizer,
                      weights_savelocal_path,
-                     save_interval=3,
-                     show_step_interval=4,
-                     show_epoch_interval=1)
+                     save_interval=1,
+                     show_step_interval=10,
+                     show_epoch_interval=1,
+                     log_folder_path=log_save_local_path)
 
 
 
