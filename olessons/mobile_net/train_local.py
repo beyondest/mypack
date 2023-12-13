@@ -8,7 +8,7 @@ from utils_network.data import *
 from torchvision import transforms,datasets
 from torch.utils.data import Dataset,DataLoader
 import os_op.os_operation as oso
-from utils_network.mytrain import *
+from actions import *
 from utils_network.mymodel import *
 
 

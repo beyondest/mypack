@@ -925,14 +925,16 @@ class Data:
             yaml_path (str): _description_
 
         Returns:
-            train_path,val_path,weights_save_path
+            train_path,val_path,weights_save_path,log_save_folder
         """
         info =Data.get_file_info_from_yaml(yaml_path)
         train_path = info['train_path']
         val_path = info['val_path']
         weights_save_path = info['weights_save_path']
-        return train_path,val_path,weights_save_path
-        
+        log_save_folder = info['log']
+        return train_path,val_path,weights_save_path,log_save_folder
+    
+    
          
 class dataset_hdf5(Dataset):
     """Will reshape y to item

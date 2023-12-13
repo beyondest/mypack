@@ -53,7 +53,7 @@ def copy_function(src,target):
             
 def traverse(root_path:str,out_path:str|None,fmt:str|None,deal_func,*args, **kwargs):
     """Traverse each file in root_path in fmt by deal_func
-    Notice: deal_func must have abs_path,out_path in the first position of all params\n
+    Notice: deal_func must have abs_path,(out_path) in the first position of all params\n
     Args:
         root_path (str): folder with no extension
         out_path (str): folder with no extension
@@ -66,17 +66,21 @@ def traverse(root_path:str,out_path:str|None,fmt:str|None,deal_func,*args, **kwa
         if fmt == None:
             if out_path is not None:
                 outabs_path = os.path.join(out_path,i)
+                deal_func(abs_path,outabs_path,*args, **kwargs)
             else:
                 outabs_path = None
-            deal_func(abs_path,outabs_path,*args, **kwargs)
+                deal_func(abs_path,*args, **kwargs)
+            
 
         else:
             if os.path.splitext(abs_path)[1]=='.'+fmt:
                 if out_path is not None:
                     outabs_path = os.path.join(out_path,i)
+                    deal_func(abs_path,outabs_path,*args, **kwargs)
                 else:
                     outabs_path = None
-                deal_func(abs_path,outabs_path,*args, **kwargs)
+                    deal_func(abs_path,*args, **kwargs)
+                
 
 def make_packs(root_path:str,
                pre_name:str,
