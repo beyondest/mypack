@@ -18,8 +18,8 @@ print(f'Using device:{device}')
 train_path,val_path,weights_save_path,log_save_folder = Data.get_path_info_from_yaml(yaml_path)
 
 
-val_dataset = datasets.ImageFolder(val_path)
-train_dataset = datasets.ImageFolder(train_path)
+val_dataset = datasets.ImageFolder(val_path,val_trans)
+train_dataset = datasets.ImageFolder(train_path,train_trans)
 
 
 val_dataloader = DataLoader(val_dataset,
