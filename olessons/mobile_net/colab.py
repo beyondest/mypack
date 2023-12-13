@@ -17,7 +17,6 @@ print(f'Using device:{device}')
 
 train_path,val_path,weights_save_path = Data.get_path_info_from_yaml(yaml_path)
 
-
 hdataset = datasets.ImageFolder
 val_trans = transforms.Compose([
     transforms.ToTensor(),
@@ -60,7 +59,7 @@ train_classification(model,
                      optimizer,
                      weights_save_path,
                      save_interval=3,
-                     show_step_interval=4,
+                     show_step_interval=10,
                      show_epoch_interval=1)
 
 

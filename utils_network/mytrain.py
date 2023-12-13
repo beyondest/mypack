@@ -29,7 +29,7 @@ def train_classification(model:torch.nn.Module,
     writer = SummaryWriter(log_dir=log_folder_path)
     oso.get_current_datetime(True)
     t1 = time.perf_counter()
-    
+    print(f'All {epochs} epochs to run, each epoch train steps:{len(train_dataloader)}')
     step_show =True
     epoch_show = True
     log_step_write = True
@@ -48,7 +48,7 @@ def train_classification(model:torch.nn.Module,
     val_step_nums = len(val_dataloader)
     train_step_nums = len(train_dataloader)
     save_path = os.path.split(weights_save_path)[0]
-        
+    
     
     best_accuracy = 0
     epoch_loss = 0
