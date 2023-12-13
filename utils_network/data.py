@@ -935,6 +935,11 @@ class Data:
         
          
 class dataset_hdf5(Dataset):
+    """Will reshape y to item
+
+    Args:
+        Dataset (_type_): _description_
+    """
     def __init__(self,hdf5_path:str) -> None:
         super().__init__()
         
@@ -949,7 +954,7 @@ class dataset_hdf5(Dataset):
         with h5py.File(self.path,'r') as hf:
             X = hf['X'][f'{index}'][:]
             y = hf['y'][f'{index}'][:]
-        return torch.from_numpy(X),torch.from_numpy(y)
+        return torch.from_numpy(X),torch.from_numpy(y).item()
             
 class dataset_pkl(Dataset):
     def __init__(self,pkl_path:str) -> None:

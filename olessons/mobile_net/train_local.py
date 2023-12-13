@@ -29,8 +29,8 @@ train_trans = transforms.Compose([
     transforms.RandomHorizontalFlip(flip_probability),
     transforms.Normalize(mean,std)
 ])
-val_dataset = dataset_pkl(val_pkl_path)
-train_dataset = dataset_pkl(train_pkl_path)
+val_dataset = dataset_hdf5(val_hdf5_path)
+train_dataset = dataset_hdf5(val_hdf5_path)
 
 
 val_dataloader = DataLoader(val_dataset,
