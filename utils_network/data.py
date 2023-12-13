@@ -931,7 +931,7 @@ class Data:
         train_path = info['train_path']
         val_path = info['val_path']
         weights_save_path = info['weights_save_path']
-        log_save_folder = info['log']
+        log_save_folder = info['log_save_folder']
         return train_path,val_path,weights_save_path,log_save_folder
     
     
