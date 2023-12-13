@@ -1,4 +1,4 @@
-train_path: /content/gdriva/MyDrive/datasets/val.hdf5
-val_path: /content/gdriva/MyDrive/datasets/val.hdf5
+train_path: /content/gdrive/MyDrive/datasets/val.hdf5
+val_path: /content/gdrive/MyDrive/datasets/val.hdf5
 weights_save_path: /content/gdrive/MyDrive/out/pet
 
