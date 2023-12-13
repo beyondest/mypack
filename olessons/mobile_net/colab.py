@@ -17,7 +17,6 @@ print(f'Using device:{device}')
 
 train_path,val_path,weights_save_path = Data.get_path_info_from_yaml(yaml_path)
 
-hdataset = datasets.ImageFolder
 val_trans = transforms.Compose([
     transforms.ToTensor(),
     transforms.Resize((224,224))
@@ -29,8 +28,8 @@ train_trans = transforms.Compose([
     transforms.RandomHorizontalFlip(flip_probability),
     transforms.Normalize(mean,std)
 ])
-val_dataset = dataset_pkl(val_path)
-train_dataset = dataset_pkl(train_path)
+val_dataset = dataset_hdf5(val_path)
+train_dataset = dataset_hdf5(train_path)
 
 
 val_dataloader = DataLoader(val_dataset,
