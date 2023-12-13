@@ -1,4 +1,4 @@
-train_path: /content/gdrive/MyDrive/datasets/train.pkl.gz
-val_path: /content/gdrive/MyDrive/datasets/val.pkl.gz
+train_path: /content/train.pkl.gz
+val_path: /content/val.pkl.gz
 weights_save_path: /content/gdrive/MyDrive/out/pet
 
