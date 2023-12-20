@@ -48,11 +48,12 @@ class simple_2classification(torch.nn.Module):
 
 class lenet5(torch.nn.Module):
     def __init__(self, 
-                 img_size:tuple|None=None,
-                 *args,
-                 **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+                 class_nums:int = 10,
+                 dropout:float = 0.2) -> None:
+        super().__init__()
+        self.dropout = dropout
         #layer 1
+        
         self.conv1 = torch.nn.Conv2d(1,6,kernel_size=5,stride=1,padding=2,bias=True)
         self.act1 = torch.nn.ReLU()              #tanh ,sigmoid is both ok ???
         self.pool1 = torch.nn.AvgPool2d(kernel_size=2,stride=2,padding=0)        #Avg = average
@@ -68,8 +69,12 @@ class lenet5(torch.nn.Module):
         self.fc1_act = torch.nn.ReLU()
         self.fc2 = torch.nn.Linear(120,84,bias=True)
         self.fc2_act = torch.nn.ReLU()
-        self.fc3 = torch.nn.Linear(84,10,bias=True)     #10 represents 10 numbers
-        self.fc3_act = torch.nn.Softmax(dim=1)          #x.shape = (batch_size, num_classes), axis = 1 means dim 1 info will loss, others will save
+        self.dropout = torch.nn.Dropout(self.dropout)
+        self.fc3 = torch.nn.Linear(84,class_nums,bias=True)    
+                                           
+        
+        self.weights_init()
+        
         
         
     def forward(self, x):
@@ -78,8 +83,26 @@ class lenet5(torch.nn.Module):
         x = self.flatten(x)
         x = self.fc1_act(self.fc1(x))
         x = self.fc2_act(self.fc2(x))
-        x = self.fc3_act(self.fc3(x))
+        x = self.fc3(self.dropout(x))
         return x
+
+    def weights_init(self):
+        for m in self.modules():
+            if isinstance(m,torch.nn.Conv2d):
+                #when using relu as activation, kaiming is necessary to init it
+                #conv is often set to fan_out, when linear is often set to fan_in
+                torch.nn.init.kaiming_uniform_(m.weight,mode='fan_out',nonlinearity='relu')
+                if m.bias is not None:
+                    torch.nn.init.constant_(m.bias,0)
+            elif isinstance(m,torch.nn.BatchNorm2d):
+                torch.nn.init.constant_(m.weight,1)
+                torch.nn.init.constant_(m.bias,0)
+            elif isinstance(m,torch.nn.Linear):
+                #xavier makes forward and back_propergation runs fluently 
+                torch.nn.init.xavier_normal_(m.weight)
+                torch.nn.init.constant_(m.bias,0)
+                      
+    
         
 
 
@@ -93,6 +116,7 @@ class mobilenet_v2(torch.nn.Module):
                  num_classes:int = 1000,
                  channel_width_alpha:float = 1, 
                  channel_multiply_factor:int = 8,
+                 drop_out:float = 0.2
                  ) -> None:
         super().__init__()
         
@@ -100,7 +124,7 @@ class mobilenet_v2(torch.nn.Module):
         self.factor = channel_multiply_factor
         self.first_channels = _make_divisible(32 * channel_width_alpha, channel_multiply_factor)
         self.last_channels = _make_divisible(1280 * channel_width_alpha,channel_multiply_factor)
-        self.dropout = 0.2
+        self.dropout = drop_out
         
         
         self.inversed_residual_setting = [

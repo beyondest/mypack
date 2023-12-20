@@ -672,7 +672,7 @@ class Data:
         
         with open(yaml_path,open_mode) as file:
             yaml.dump(dict_info,file,default_flow_style=False)
-        print(f'dict_info saved to yamlfile in {yaml_path}')
+        print(f'Dict_info saved to yamlfile in {yaml_path}')
     
     @classmethod
     def save_dataset_to_pkl(cls,

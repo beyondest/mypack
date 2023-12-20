@@ -15,7 +15,6 @@ from utils_network.mymodel import *
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'Using device:{device}')
 
-train_path,val_path,weights_save_path,log_save_folder = Data.get_path_info_from_yaml(yaml_path)
 
 
 val_dataset = datasets.ImageFolder(val_root_path,val_trans)
@@ -36,6 +35,7 @@ train_dataloader = DataLoader(train_dataset,
 model = mobilenet_v2(num_classes=2)
 model.to(device)
 criterion = torch.nn.CrossEntropyLoss()
+
 optimizer = torch.optim.Adam(model.parameters(),lr=learning_rate)
 
 

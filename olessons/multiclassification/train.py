@@ -4,7 +4,7 @@ import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 import sys
-sys.path.append('../../utils_network/')
+sys.path.append('../..')
 from utils_network.data import *
 from utils_network.mymodel import *
 import torch.utils.data as td
@@ -25,8 +25,7 @@ test_loader = td.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle
 
 model = lenet5()
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=learning_rate)
-
+optimizer = optim.Adam(model.parameters(),lr=learning_rate)
 
 
 

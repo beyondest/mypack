@@ -9,24 +9,25 @@ from torchvision import transforms,datasets
 import cv2
 from utils_network.data import *
 
-def train_classification(model:torch.nn.Module,
-          train_dataloader,
-          val_dataloader,
-          device:None,
-          epochs:int,
-          criterion,
-          optimizer,
-          weights_save_path:str|None,
-          save_interval:int = 1,
-          show_step_interval:int=10,
-          show_epoch_interval:int=2,
-          log_folder_path:str = './log',
-          log_step_interval:int = 10,
-          log_epoch_interval:int = 1
-          ):
+def train_classification(   model:torch.nn.Module,
+                            train_dataloader,
+                            val_dataloader,
+                            device:None,
+                            epochs:int,
+                            criterion,
+                            optimizer,
+                            weights_save_path:str|None,
+                            save_interval:int = 1,
+                            show_step_interval:int=10,
+                            show_epoch_interval:int=2,
+                            log_folder_path:str = './log',
+                            log_step_interval:int = 10,
+                            log_epoch_interval:int = 1
+                            ):
     '''
     if show_step_interval<0, will not show step
     '''
+    
     if not os.path.exists(log_folder_path):
         os.mkdir(log_folder_path)
     writer = SummaryWriter(log_dir=log_folder_path)
@@ -115,6 +116,7 @@ def train_classification(model:torch.nn.Module,
                 writer.add_scalar('avg_epoch_loss',all_loss/(epoch+1),epoch)
         writer.add_scalar('epoch_accuracy',accuracy,epoch)
         
+        
         if weights_save_path is not None:
             if epoch%save_interval == 0:
                 name = f'weights.{accuracy:.2f}.{epoch}.pth'
@@ -124,7 +126,7 @@ def train_classification(model:torch.nn.Module,
                 
                 print(f'model.state_dict save to {current_save_path}')
                 torch.save(model.state_dict(),current_save_path)
-                
+          
     oso.get_current_datetime(True)
     t2 = time.perf_counter()
     t = t2-t1
@@ -142,6 +144,17 @@ def predict_classification(model:torch.nn.Module,
                            fmt:str = 'jpg',
                            if_cvt_rgb:bool = True
                            ):
+    """Predict single or a folder of images , notice that if input is grayscale, then you have to transform it in trans!!!
+
+    Args:
+        model (torch.nn.Module): _description_
+        trans (_type_): _description_
+        img_path (str): _description_
+        weights_path (str): _description_
+        class_yaml_path (str): _description_
+        fmt (str, optional): _description_. Defaults to 'jpg'.
+        if_cvt_rgb (bool, optional): _description_. Defaults to True.
+    """
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     idx_to_class = Data.get_file_info_from_yaml(class_yaml_path)
     model.load_state_dict(torch.load(weights_path,map_location=device))

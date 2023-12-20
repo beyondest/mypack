@@ -91,7 +91,7 @@ def port_open(port_abs_path:str = '/dev/ttyUSB0',
         write_timeout=1,
         dsrdtr=None,
         inter_byte_timeout=0.1,
-        exclusive=None # 1 is ok for one time long communication
+        exclusive=1 # 1 is ok for one time long communication, but None is not, I dont know why!!!!
     ) 
     return ser
     
@@ -317,7 +317,7 @@ class action_data(data_list):
                  fire_times:int=1,
                  relative_pitch_10000:int=-1745,
                  relative_yaw_10000:int=-1745,
-                 target_minute:int=20,
+                 target_minute:int=30,
                  target_second:int=30,
                  target_second_frac_10000:int=1234) -> None:
         super().__init__()

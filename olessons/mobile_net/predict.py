@@ -17,7 +17,7 @@ model = mobilenet_v2(num_classes=2)
 
 val_dog_folder = '/mnt/d/datasets/petimages/val/Dog'
 
-predict_classification(model,val_trans,val_dog_folder,trained_weights_path,class_yaml_path,if_cvt_rgb=True)
+predict_classification(model,val_trans,'./res',trained_weights_path,class_yaml_path,if_cvt_rgb=True)
 #validation(model,val_trans,10,train_root_path,trained_weights_path)
 
 
