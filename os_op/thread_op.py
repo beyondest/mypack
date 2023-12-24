@@ -75,7 +75,7 @@ class task:
         self.exit_flag.clear()
         
         
-def keyboard_control_task(tasks_list:list,if_all_control_by_ctrlC:bool = True):
+def keyboard_control_task(tasks_list:list,if_all_control_by_ctrlC:bool = True, main_func:None=None,main_func_params:list|None = None):
     """enter 2 to end task 2 in tasks_list
        WARNING: MAIN THREAD of py will stop here until all end
     Args:
@@ -105,7 +105,12 @@ def keyboard_control_task(tasks_list:list,if_all_control_by_ctrlC:bool = True):
                     count+=1
                 if count ==task_nums:
                     break
-            
+            if main_func is not None:
+                if main_func_params is not None:
+                    
+                    main_func(*main_func_params)
+                else:
+                    main_func()
             
             
     except:

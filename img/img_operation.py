@@ -374,8 +374,9 @@ def add_text(img_bgr:np.ndarray,
              name:str,
              value,
              pos:tuple=(-1,-1),
-             font:int=cv2.FONT_HERSHEY_COMPLEX,
-             color:tuple=(100,200,200),
+             font:int=cv2.FONT_HERSHEY_SIMPLEX,
+             color:tuple=(0,0,0),
+             scale_size: float= 0.5
              )->np.ndarray:
     '''
     show name:value on the position of pos(x,y)\n
@@ -393,8 +394,8 @@ def add_text(img_bgr:np.ndarray,
     elif img_size_yx==(640,640):
         scale_size=1
     else:
-        print('img_size not match, you havent preset for add_text yet')
-        sys.exit()  
+        pass
+    
     thickness=round(3/(1024*1280)*(img_size_yx[0]*img_size_yx[1]))
     dst=cv2.putText(img_bgr,f'{name}:{value}',pos,font,scale_size,color,thickness)
     return dst
@@ -1680,7 +1681,25 @@ def check_and_change_shape(x,y,shape:tuple)->np.ndarray:
     return x,y
     
        
-       
+
+def draw_time_correlated_value(img:np.ndarray,
+                               timecount,
+                               value,
+                               value_scope:tuple,
+                               point_radians:5,
+                               point_color:tuple = (0,255,0))->np.ndarray:
+    '''
+    Warning: you need to clear img yourself if timecount overflow
+    '''
+    
+    x = round(timecount)
+    
+    y = round(img.shape[0] + ((value - value_scope[0])/(value_scope[1]-value_scope[0])) * (-img.shape[0]))
+    
+    cv2.circle(img,(x,y),point_radians,point_color,-1)
+    
+    return img
+   
 ############################################################IMG API FOR NETWORK###########################################
 
 class Img:
@@ -1695,9 +1714,13 @@ class Img:
             img=np.zeros(size_tuple,dtype=np.uint8)
             if color=='white':
                 img.fill(255)
+            self.color = color
             self.img=img
-            self.wid=img.shape[0]
-            self.hei=img.shape[1]
+            self.wid=img.shape[1]
+            self.hei=img.shape[0]
+            self.timecount = 0
+            self.timecount_max = self.wid - 1
+            
             
         def draw_rec(self,color:tuple=(0,0,255),mode:int=0,info:tuple|np.ndarray|None=None,nums:int=1):
             '''
@@ -1738,11 +1761,49 @@ class Img:
             else:
                 raise TypeError('mode is wrong')
         def show(self):
+            '''
+            Only for quick show, will block until pressing
+            '''
             cv2.imshow('canvas',self.img)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
+        
+        
+        def addtxt(self,
+                   name:str,
+                   value,
+                   pos:tuple,
+                   color:tuple = (100,200,200),
+                   scale_size:float = 0.5
+                   ):
+            self.img = add_text(self.img,
+                                name=name,
+                                value=value,
+                                pos=pos,
+                                color=color,
+                                scale_size=scale_size
+                                )    
             
+        def draw_time_correlated_value(self,value,value_scope:tuple,point_radians:5,point_color:tuple = (0,255,0)):
+            self.timecount+=1
             
+            x = round(self.timecount)
+            
+            y = round(self.hei + ((value - value_scope[0])/(value_scope[1]-value_scope[0])) * (-self.hei))
+            
+            cv2.circle(self.img,(x,y),point_radians,point_color,-1)
+            
+            if self.timecount == self.timecount_max:
+                self.timecount = 0
+                
+                self.img=np.zeros((self.wid,self.hei),dtype=np.uint8)
+                if self.color=='white':
+                    self.img.fill(255)
+                
+            
+                
+        
+        
     class Check:
         def __init__(self) -> None:
             pass

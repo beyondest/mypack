@@ -264,9 +264,11 @@ class syn_data(data_list):
         self.present_minute = present_minute
         self.present_second = present_second
         self.present_second_frac_10000 = present_second_frac_10000
-        self.len = 4
+        self.list = [self.SOF,self.present_minute,self.present_second,self.present_second_frac_10000]
         
-        self.label_list = ['SOF','present_minute','present_second','present_second_frac']
+        self.len = len(self.list)
+        
+        self.label_list = ['SOF','pre_min','pre_sec','pre_sec_frac']
 
     def convert_syn_data_to_bytes(self,if_crc:bool = True,if_revin_crc:bool = True, if_part_crc :bool =True)->bytes:
         """Calculate crc here if needed
@@ -317,16 +319,17 @@ class action_data(data_list):
     def __init__(self,
                  SOF:str = 'A',
                  fire_times:int=1,
-                 relative_pitch_10000:int=-1745,
-                 relative_yaw_10000:int=-1745,
+                 relative_pitch_10000:int=-200,
+                 relative_yaw_10000:int=-200,
                  target_minute:int=30,
                  target_second:int=30,
                  target_second_frac_10000:int=1234,
                  setting_voltage_or_rpm:int=60) -> None:
         super().__init__()
         
-        self.len = 8
-        self.label_list = ['SOF','fire_times','relative_pitch_10000','relative_yaw_10000','target_minute','target_second','target_second_frac_10000','setting_voltage_or_rpm']
+        
+        
+        self.label_list = ['SOF','ftimes','relpitch','relyaw','tarmin','tarsec','tarsecfrac','svolrpm']
         self.SOF = SOF
         self.fire_times = fire_times
         self.relative_pitch_10000 = relative_pitch_10000
@@ -335,6 +338,16 @@ class action_data(data_list):
         self.target_second = target_second
         self.target_second_frac_10000 = target_second_frac_10000
         self.setting_voltage_or_rpm = setting_voltage_or_rpm
+        self.list = [self.SOF,
+                     self.fire_times,
+                     self.relative_pitch_10000,
+                     self.relative_yaw_10000,
+                     self.target_minute,
+                     self.target_second,
+                     self.target_second_frac_10000,
+                     self.setting_voltage_or_rpm]
+        self.len = len(self.list)
+        
         
 
     def convert_action_data_to_bytes(self,if_crc:bool = True, if_revin_crc:bool = True , if_part_crc:bool = True)->bytes:
@@ -400,8 +413,7 @@ class pos_data(data_list):
                  present_debug_value:int = -1
                  ) -> None:
         super().__init__()
-        self.len = 7
-        self.label_list = ['SOF','stm_minute','stm_second','stm_second_frac_10000','present_pitch','present_yaw','present_debug_value']
+        self.label_list = ['SOF','stmin','stsec','stsecfrac','prepit','preyaw','predbgval']
     
         self.SOF =SOF
         self.stm_minute = stm_minute
@@ -412,6 +424,15 @@ class pos_data(data_list):
         self.present_debug_value = present_debug_value
         self.error =False
         self.crc_get =0
+        self.list = [self.SOF,
+                     self.stm_minute,
+                     self.stm_second,
+                     self.stm_second_frac,
+                     self.present_pitch,
+                     self.present_yaw,
+                     self.present_debug_value]
+        self.len = len(self.list)
+        
         
 
 

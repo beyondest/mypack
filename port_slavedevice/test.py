@@ -1,39 +1,29 @@
+import sys
+sys.path.append('..')
+import img.img_operation as imo
+
 import cv2
-import numpy as np
-import time
+from os_op.thread_op import *
 
-# 初始化变量
-y_values = []
-y = 0.0
-x_values = 0
+def fu(canvas:imo.Img.canvas,x_list):
+    img = canvas.img.copy()
+    
+    img = imo.add_text(img,'fs',x_list[0])
+    cv2.imshow('ff',img)
+    
 
-# 创建窗口
-cv2.namedWindow('Dynamic Plot', cv2.WINDOW_NORMAL)
+def deinit():
+    cv2.destroyAllWindows()
 
-while True:
-    # 更新数据的函数
-    y += 0.1
-    y_values.append(y)
+def add(x_list):
+     x_list[0]+=1
+    
+canvas = imo.Img.canvas((100,100))
+x_list = [2]
 
-    # 创建空白图像
-    img = np.ones((300, 800, 3), dtype=np.uint8) * 255
+task1 = task(0.5,
+             for_circle_func=add,
+             params_for_circle_func=[x_list]
+             )
 
-    # 绘制曲线
-    for i in range(len(y_values) - 1):
-        cv2.line(img, (i * 8, int(200 - y_values[i] * 20)),
-                 ((i + 1) * 8, int(200 - y_values[i + 1] * 20)), (0, 0, 255), 2)
-
-    # 显示图像
-    cv2.imshow('Dynamic Plot', img)
-
-    # 每隔0.2秒更新一次
-    time.sleep(0.2)
-
-    # 检测键盘输入，按 'q' 键退出循环
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-    x_values += 1
-
-# 销毁窗口
-cv2.destroyAllWindows()
+keyboard_control_task([task1],main_func=fu,main_func_params=[canvas,x_list])
