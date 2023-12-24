@@ -120,32 +120,41 @@ def keyboard_control_task(tasks_list:list,if_all_control_by_ctrlC:bool = True):
         pass
     
 
+class test:
+    def __init__(self) -> None:
+        
+        self.a = 1
+    
 
 if __name__ == "__main__":
     
-    data = 2
+    
+    data0 = test()
+    data = {'a':1}
     def f1(for_op):
-        print('hello',for_op)
+        print('f1 only show',for_op.a)
         
     def deinitf1(for_op):
-        print('deinit1',for_op)
+        print('deinit1',for_op.a)
     
     def f2(for_op):
-        print('hello2',for_op)
+        for_op.a+=1
+        print(f'f2 change data:data++ {for_op.a}')
+        
     def deinitf2(for_op):
-        print('deinit2',for_op)
+        print('deinit2',for_op.a)
     
-    task_a = task(1,
+    task_a = task(0.3,
                   for_circle_func=f1,
                   for_circle_func_deinit=deinitf1,
-                  params_for_circle_func=[data],
-                  params_for_circle_func_deinit=[data],
+                  params_for_circle_func=[data0],
+                  params_for_circle_func_deinit=[data0],
                   )   
-    task_b = task(1.5,
+    task_b = task(0.9,
                   for_circle_func=f2,
-                  params_for_circle_func=[data],
+                  params_for_circle_func=[data0],
                   for_circle_func_deinit=deinitf2,
-                  params_for_circle_func_deinit=[data])
+                  params_for_circle_func_deinit=[data0])
     
     keyboard_control_task([task_a,task_b])
     

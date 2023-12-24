@@ -265,7 +265,7 @@ class syn_data(data_list):
         self.present_second = present_second
         self.present_second_frac_10000 = present_second_frac_10000
         self.len = 4
-        self.list = [SOF,present_minute,present_second,present_second_frac_10000]
+        
         self.label_list = ['SOF','present_minute','present_second','present_second_frac']
 
     def convert_syn_data_to_bytes(self,if_crc:bool = True,if_revin_crc:bool = True, if_part_crc :bool =True)->bytes:
@@ -279,6 +279,7 @@ class syn_data(data_list):
         PART_CRC:1-4 byte
         ALL: 6 elements,list has 4 elements
         """
+        self.list = [self.SOF,self.present_minute,self.present_second,self.present_second_frac_10000]
         fmt_list = ['<c','<B','<B','<H']
         out = b''
         crc_v =b''
@@ -325,7 +326,6 @@ class action_data(data_list):
         super().__init__()
         
         self.len = 8
-        self.list = [SOF,fire_times,relative_pitch_10000,relative_yaw_10000,target_minute,target_second,target_second_frac_10000,setting_voltage_or_rpm]
         self.label_list = ['SOF','fire_times','relative_pitch_10000','relative_yaw_10000','target_minute','target_second','target_second_frac_10000','setting_voltage_or_rpm']
         self.SOF = SOF
         self.fire_times = fire_times
@@ -352,10 +352,19 @@ class action_data(data_list):
         PART_CRC: byte2-5
         ALL: 10 elements ,list has 7 elements
         """
+        self.list = [self.SOF,
+                     self.fire_times,
+                     self.relative_pitch_10000,
+                     self.relative_yaw_10000,
+                     self.target_minute,
+                     self.target_second,
+                     self.target_second_frac_10000,
+                     self.setting_voltage_or_rpm]
         
         fmt_list = ['<c','<b','<h','<h','<B','<B','<H','<h']
         out = b''
         crc_v =b''
+        
         for index,each in enumerate(self.list):
             out += convert_to_bytes((each,fmt_list[index]))
         
@@ -385,20 +394,19 @@ class pos_data(data_list):
                  SOF:str = 'P',
                  stm_minute:int = 20,
                  stm_second:int = 30,
-                 stm_second_frac_10000:int = 1234,
-                 present_pitch:int = -1745,
-                 present_yaw:int = -1745,
-                 present_debug_value = -1
+                 stm_second_frac:float = 0.1234,
+                 present_pitch:float = -0.1745,
+                 present_yaw:float = -0.1745,
+                 present_debug_value:int = -1
                  ) -> None:
         super().__init__()
         self.len = 7
-        self.list = [SOF,stm_minute,stm_second,stm_second_frac_10000,present_pitch,present_yaw,present_debug_value]
         self.label_list = ['SOF','stm_minute','stm_second','stm_second_frac_10000','present_pitch','present_yaw','present_debug_value']
     
         self.SOF =SOF
         self.stm_minute = stm_minute
-        self.second = stm_second
-        self.stm_second_frac_10000 = stm_second_frac_10000
+        self.stm_second = stm_second
+        self.stm_second_frac = stm_second_frac
         self.present_pitch = present_pitch
         self.present_yaw = present_yaw
         self.present_debug_value = present_debug_value
@@ -422,7 +430,6 @@ class pos_data(data_list):
         ALL: 9 elements , list has 7 elements
         Return:
             if_error
-        
         """
         self.fmt_list = ['<c','<B','<B','<H','<h','<h','<h','<c','<I']
         self.range_list = [(0,1),(1,2),(2,3),(3,5),(5,7),(7,9),(9,11),(11,12),(12,16)]
@@ -461,10 +468,28 @@ class pos_data(data_list):
             error = True
         
         
-        self.list = out[:7]
+
         self.error =error
         self.crc_v = crc_v
         self.crc_get = out[8]
+          
+        self.SOF = out[0]
+        self.stm_minute = out[1]
+        self.stm_second = out[2]
+        self.stm_second_frac = round(out[3]/10000,4)
+        self.present_pitch = round(out[4]/10000,4)
+        self.present_yaw = round(out[5]/10000,4)
+        self.present_debug_value = out[6]
+        
+        self.list = [self.SOF,
+                     self.stm_minute,
+                     self.stm_second,
+                     self.stm_second_frac,
+                     self.present_pitch,
+                     self.present_yaw,
+                     self.present_debug_value]
+        
+        
         
         return error
 

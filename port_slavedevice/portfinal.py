@@ -73,7 +73,8 @@ if __name__ == "__main__":
     pdata = pos_data()
     
     
-
+    
+    
 
     task1 = task(0.4,
                  read_and_show,
