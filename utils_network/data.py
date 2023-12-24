@@ -1,3 +1,4 @@
+from typing import Any
 import numpy as np
 import random 
 import time
@@ -25,7 +26,10 @@ import concurrent.futures
 import fcntl
 import threading
 import h5py
-
+import cv2
+from PIL import Image
+import img.img_operation as imo
+import PIL as pil
 def tp(*args):
     for i in args:
         print(type(i))
@@ -1090,6 +1094,66 @@ def mouse_click_capture(xlim:tuple|None=(0,1),ylim:tuple|None=(0,1)):
     plt.close()
 
     return points    
+
+
+
+class PIL_img_transform:
+    def __init__(self,
+                 cv_custom_transform,
+                 total_input_channel_type:str = 'rgb''bgr''gray') -> None:
+        """API for custom cv2 transform function
+
+        Args:
+            cv_custom_transform: 
+            input MUST be BGR image;\n
+            output controled by custom_transform MUST fit net input;
+            
+        """
+        self.cv_custom_transfomr = cv_custom_transform
+        self.total_input_channel_type = total_input_channel_type
+        
+        
+    def __call__(self,ori_X):
+        if self.cv_custom_transfomr is None:
+            raise TypeError('custom trans form cannot be None')
+        
+        if self.total_input_channel_type == 'rgb':
+            cv_img = cv2.cvtColor(np.array(ori_X),cv2.COLOR_RGB2BGR)
+        elif self.total_input_channel_type == 'gray':
+            cv_img = cv2.cvtColor(np.array(ori_X),cv2.COLOR_GRAY2BGR)
+        elif self.total_input_channel_type == 'bgr':
+            cv_img = np.array(ori_X)
+        
+        else:
+            raise TypeError(f"Wrong input channel type {self.total_input_channel_type}, support rgb,gray,bgr")
+        
+        
+        
+            
+        cv_img = self.cv_custom_transfomr(cv_img)
+        
+        
+        
+        
+        return cv_img
+        
+        
+    
+    
+
+
+
+
+        
+    
+
+
+
+
+
+
+
+
 
 
 

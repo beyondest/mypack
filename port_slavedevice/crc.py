@@ -64,7 +64,7 @@ def port_close(ser:serial.Serial):
    
 def port_open(port_abs_path:str = '/dev/ttyUSB0',
               bytesize:int = 8,
-              baudrate = 115200)->serial.Serial:
+              baudrate = 9600)->serial.Serial:
     """ Change port init settings here\n
         Init settings:\n
         port=port_abs_path,\n
@@ -91,7 +91,8 @@ def port_open(port_abs_path:str = '/dev/ttyUSB0',
         write_timeout=1,
         dsrdtr=None,
         inter_byte_timeout=0.1,
-        exclusive=1 # 1 is ok for one time long communication, but None is not, I dont know why!!!!
+        exclusive=None, # 1 is ok for one time long communication, but None is not, I dont know why!!!!
+        timeout=1
     ) 
     return ser
     
@@ -319,12 +320,13 @@ class action_data(data_list):
                  relative_yaw_10000:int=-1745,
                  target_minute:int=30,
                  target_second:int=30,
-                 target_second_frac_10000:int=1234) -> None:
+                 target_second_frac_10000:int=1234,
+                 setting_voltage_or_rpm:int=60) -> None:
         super().__init__()
         
-        self.len = 7
-        self.list = [SOF,fire_times,relative_pitch_10000,relative_yaw_10000,target_minute,target_second,target_second_frac_10000]
-        self.label_list = ['SOF','fire_times','relative_pitch_10000','relative_yaw_10000','target_minute','target_second','target_second_frac_10000']
+        self.len = 8
+        self.list = [SOF,fire_times,relative_pitch_10000,relative_yaw_10000,target_minute,target_second,target_second_frac_10000,setting_voltage_or_rpm]
+        self.label_list = ['SOF','fire_times','relative_pitch_10000','relative_yaw_10000','target_minute','target_second','target_second_frac_10000','setting_voltage_or_rpm']
         self.SOF = SOF
         self.fire_times = fire_times
         self.relative_pitch_10000 = relative_pitch_10000
@@ -332,10 +334,8 @@ class action_data(data_list):
         self.target_minute = target_minute
         self.target_second = target_second
         self.target_second_frac_10000 = target_second_frac_10000
+        self.setting_voltage_or_rpm = setting_voltage_or_rpm
         
-        
-    
-
 
     def convert_action_data_to_bytes(self,if_crc:bool = True, if_revin_crc:bool = True , if_part_crc:bool = True)->bytes:
         """Calculate crc here if needed
@@ -346,21 +346,19 @@ class action_data(data_list):
         NO.4 (reach_target_time_minute:int , '<B')         |     (0<=x<60)                  |byte6      bytes 1     total 7
         NO.5 (reach_target_time_second:int , '<B')         |     (0<=x<=60)                 |byte7      bytes 1     total 8
         NO.6 (reach_target_time_second_frac.4*10000 , '<H')|     (0<=x<=10000)              |byte8-9    bytes 2     total 10 
-        NO.78 (null bytes: b'12', '<c','<c')  (auto add)   |                                |byte10-11  bytes 2     total 12
+        NO.78(setting_voltage_or_rpm:int, '<h')(only for debug)| (-30000<=x<=30000 if vol)  |byte10-11  bytes 2     total 12
         NO.9(crc_value:int , '<I')   (auto add to end)     |     (return of cal_crc func)   |byte12-15  bytes 4     total 16
         
         PART_CRC: byte2-5
         ALL: 10 elements ,list has 7 elements
         """
         
-        fmt_list = ['<c','<b','<h','<h','<B','<B','<H']
+        fmt_list = ['<c','<b','<h','<h','<B','<B','<H','<h']
         out = b''
         crc_v =b''
-        null_bytes = b'12'
         for index,each in enumerate(self.list):
             out += convert_to_bytes((each,fmt_list[index]))
         
-        out+=null_bytes 
         if if_crc:
             if if_revin_crc:
                 if if_part_crc:
@@ -375,11 +373,9 @@ class action_data(data_list):
             self.crc_v = crc_v
             crc_v = convert_to_bytes((crc_v,'<I'))
             
-            
         else:
             crc_v = b''
-            
-        
+              
         out+= crc_v
         return out  
 
@@ -391,12 +387,13 @@ class pos_data(data_list):
                  stm_second:int = 30,
                  stm_second_frac_10000:int = 1234,
                  present_pitch:int = -1745,
-                 present_yaw:int = -1745
+                 present_yaw:int = -1745,
+                 present_debug_value = -1
                  ) -> None:
         super().__init__()
-        self.len = 6
-        self.list = [SOF,stm_minute,stm_second,stm_second_frac_10000,present_pitch,present_yaw]
-        self.label_list = ['SOF','stm_minute','stm_second','stm_second_frac_10000','present_pitch','present_yaw']
+        self.len = 7
+        self.list = [SOF,stm_minute,stm_second,stm_second_frac_10000,present_pitch,present_yaw,present_debug_value]
+        self.label_list = ['SOF','stm_minute','stm_second','stm_second_frac_10000','present_pitch','present_yaw','present_debug_value']
     
         self.SOF =SOF
         self.stm_minute = stm_minute
@@ -404,6 +401,7 @@ class pos_data(data_list):
         self.stm_second_frac_10000 = stm_second_frac_10000
         self.present_pitch = present_pitch
         self.present_yaw = present_yaw
+        self.present_debug_value = present_debug_value
         self.error =False
         self.crc_get =0
         
@@ -417,17 +415,18 @@ class pos_data(data_list):
         NO.3 (present_time_second_frac.4*10000:int, '<H')  |     (0<=x<=10000)              |byte3-4    bytes 2     total 5
         NO.4 (present_pitch.4*10000:int , '<h')            |     (abs(x)<=15708)            |byte5-6    bytes 2     total 7
         NO.5 (present_yaw.4*10000:int , '<h')              |     (abs(x)<=31416)            |byte7-8    bytes 2     total 9
-        NO.678 (null_byte:b'123','<c','<c','<c')           |                                |byte9-11   bytes 3     total 12
-        NO.9 (crc_value:int , '<I')                        |     (return of cal_crc func)   |byte12-15  bytes 4     total 16
+        NO.6 (present_debug_value:rpm or torque I,'<h')    |                                |byte9-10   bytes 2     total 11
+        NO.7 (nullbyte: char='1','<c')                     |                                |byte11     bytes 1     total 12
+        NO.8 (crc_value:int , '<I')                        |     (return of cal_crc func)   |byte12-15  bytes 4     total 16
         PART_CRC: byte 5-8
-        ALL: 10 elements , list has 6 elements
+        ALL: 9 elements , list has 7 elements
         Return:
             if_error
         
         """
-        self.fmt_list = ['<c','<B','<B','<H','<h','<h','<c','<c','<c','<I']
-        self.range_list = [(0,1),(1,2),(2,3),(3,5),(5,7),(7,9),(9,10),(10,11),(11,12),(12,16)]
-        self.frame_type_nums = 10
+        self.fmt_list = ['<c','<B','<B','<H','<h','<h','<h','<c','<I']
+        self.range_list = [(0,1),(1,2),(2,3),(3,5),(5,7),(7,9),(9,11),(11,12),(12,16)]
+        self.frame_type_nums = 9
         out = []
         error = False
         for i in range(self.frame_type_nums):
@@ -437,9 +436,7 @@ class pos_data(data_list):
                     )
         
         out[0] = out[0].decode('utf-8')
-        out[6] = out[6].decode('utf-8')
         out[7]= out[7].decode('utf-8')
-        out[8]= out[8].decode('utf-8')
         
             
         if out[0] == self.SOF:
@@ -449,12 +446,12 @@ class pos_data(data_list):
                         for_crc_cal = ser_read[5:9]
                         for_crc_cal = for_crc_cal[::-1]
                         crc_v = cal_crc(for_crc_cal)
-                        error = not (crc_v == out[9])
+                        error = not (crc_v == out[8])
                     else:
                         for_crc_cal = ser_read[0:12]
                         for_crc_cal = self.flip_4bytes_atime(for_crc_cal)
                         crc_v = cal_crc(for_crc_cal)
-                        error = not (crc_v == out[9])
+                        error = not (crc_v == out[8])
                 else:
                     raise TypeError("This function is not support yet")
             else:
@@ -464,10 +461,10 @@ class pos_data(data_list):
             error = True
         
         
-        self.list = out[:6]
+        self.list = out[:7]
         self.error =error
         self.crc_v = crc_v
-        self.crc_get = out[9]
+        self.crc_get = out[8]
         
         return error
 

@@ -15,8 +15,9 @@ def convert_to_jpg(images, output_folder):
         image.save(f"{output_folder}/mnist_{i}.jpg")
 
 # 文件路径
-mnist_file_path = './data/MNIST/raw/train-images-idx3-ubyte.gz'
-output_folder = './out'
+mnist_file_path = './data/MNIST/raw/t10k-images-idx3-ubyte.gz'
+output_folder = './out2'
+
 
 # 读取 MNIST 图像数据
 mnist_images = read_idx3_ubyte(mnist_file_path)

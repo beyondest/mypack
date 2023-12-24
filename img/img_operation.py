@@ -631,27 +631,70 @@ def make_bin(abs_path:str,out_path:str,fmt:str='png',name:str='bin'):
     ret2, img_bin= cv2.threshold(img_gray, 0, 255, cv2.THRESH_OTSU)
     cv2.imwrite(os.path.join(out_path,ori_name+name+'.'+fmt),img_bin)
 
-def make_noise(abs_path:str,
-               out_path:str,
-               fmt:str='png'):
-    '''make random white circle as noise, the radius of it is 
-    1/7 of height, 1/3 possibility run'''
-    judge=random.randint(1,3)
+def add_noise_circle(img:np.ndarray,
+               circle_radius_ratio:float = 1/7,
+               noise_probability:float = 1/3
+               )->np.ndarray:
+    '''Make random white circle as noise, the radius of it is 
+    1/7 of height, 1/3 possibility add noise'''
+    judge=random.randint(1,round(1/noise_probability))
     if judge==1:
-        img=cv2.imread(abs_path)
-        ori_name=oso.get_name(abs_path)
-        out=os.path.join(out_path,ori_name+'.'+fmt)
         height=img.shape[0]
         wid=img.shape[1]
-        radius=height//7
+        radius=height//round(1/circle_radius_ratio)
         x=random.randint(0,wid-1)
         y=random.randint(0,height-1)
         cv2.circle(img,(x,y),radius,(255,255,255),-1)  
-        cv2.imwrite(out,img)
+    return img
 
 
-def add_noise(img_bgr:np.ndarray, noise_type='gaussian', seed:int = 10)->np.ndarray:
-    
+def add_noise_strip_toedge(img:np.ndarray,
+                           strip_width_ratio:float = 1/7,
+                           strip_length_ratio:float = 1,
+                           noise_probablity = 1,
+                           ):  
+    judge = random.randint(1,round(1/noise_probablity))
+    if judge == 1:
+        rows, cols, _ = img.shape
+        noise = np.zeros_like(img)
+        offset_x = round((cols-strip_length_ratio * cols)/2)
+        offset_y = round((rows-strip_length_ratio * rows)/2)
+        strip_width_vertical = round(strip_width_ratio * cols/2)
+        strip_width_horizontal = round(strip_width_ratio * rows)
+        
+        # add left vertical strip
+        noise[0+offset_y:rows-offset_y, :strip_width_vertical, :] = 127
+        
+        # add right vertical strip
+        noise[0+offset_y:rows-offset_y, -strip_width_vertical:, :] = 127
+        
+        # add up horizontal strip
+        noise[:strip_width_horizontal, 0+offset_x:cols-offset_x, :] = 127
+        
+        # add down horizontal strip
+        noise[-strip_width_horizontal:, 0+offset_x:cols-offset_x, :] = 127
+
+        
+        img = img + noise
+
+        img = np.clip(img, 0, 255)
+        
+    return img
+
+def add_noise(img_bgr:np.ndarray, noise_type='gaussian''salt-and-pepper''speckle', seed:int = 10)->np.ndarray:
+    """Only generate img with noise, not write it
+
+    Args:
+        img_bgr (np.ndarray): _description_
+        noise_type (str, optional): _description_. Defaults to 'gaussian' | 'salt-and-pepper' | 'speckle'.
+        seed (int, optional): _description_. Defaults to 10.
+
+    Raises:
+        ValueError: _description_
+
+    Returns:
+        np.ndarray: _description_
+    """
     
     img= cv2.cvtColor(img_bgr,cv2.COLOR_BGR2RGB)
     if noise_type == 'gaussian':
@@ -669,11 +712,82 @@ def add_noise(img_bgr:np.ndarray, noise_type='gaussian', seed:int = 10)->np.ndar
     noisy_image_bgr = cv2.cvtColor(noisy_image,cv2.COLOR_RGB2BGR)
     return noisy_image_bgr
 
-def add_noise2(abs_path:str,outabs_path:str,noise_type:str ="gaussian",seed:int = 10 )->None:
+
+def add_noise2(abs_path:str,outabs_path:str,noise_type:str ='gaussian''salt-and-pepper''speckle',seed:int = 10 )->None:
+    """Will write img to overlaying ori_img
+
+    Args:
+        abs_path (str): _description_
+        outabs_path (str): _description_
+        noise_type (str, optional): _description_. Defaults to "gaussian".
+        seed (int, optional): _description_. Defaults to 10.
+    """
     img = cv2.imread(abs_path)
     noisy_img_bgr = add_noise(img,noise_type=noise_type,seed=seed)
     cv2.imwrite(outabs_path,noisy_img_bgr)
     
+def trans_random_affine0(img, stretch_factor=0.5):
+    
+    height, width = img.shape[:2]
+    
+
+    stretch_horizontal = np.random.uniform(1 - stretch_factor, 1 + stretch_factor)
+
+    stretch_vertical = np.random.uniform(1 - stretch_factor, 1 + stretch_factor)
+
+    matrix = np.array([[stretch_horizontal, 0, 0], [0, stretch_vertical, 0]], dtype=np.float32)
+
+    img_stretched = cv2.warpAffine(img, matrix, (width, height), borderMode=cv2.BORDER_REFLECT_101)
+
+    return img_stretched
+
+
+
+def trans_random_affine1(img:np.ndarray, perspective_factor:float=0.5, affine_factor:float=0.5):
+    """Effect not work as expected, do not use this function
+
+    Args:
+        img (np.ndarray): _description_
+        perspective_factor (float, optional): _description_. Defaults to 0.5.
+        affine_factor (float, optional): _description_. Defaults to 0.5.
+
+    Returns:
+        _type_: _description_
+    """
+    height, width = img.shape[:2]
+
+    perspective_pts = np.array(
+        [
+            [np.random.uniform(-perspective_factor, perspective_factor) * width, np.random.uniform(-perspective_factor, perspective_factor) * height],
+            [np.random.uniform(1 - perspective_factor, 1 + perspective_factor) * width, np.random.uniform(-perspective_factor, perspective_factor) * height],
+            [np.random.uniform(-perspective_factor, perspective_factor) * width, np.random.uniform(1 - perspective_factor, 1 + perspective_factor) * height],
+            [np.random.uniform(1 - perspective_factor, 1 + perspective_factor) * width, np.random.uniform(1 - perspective_factor, 1 + perspective_factor) * height],
+        ],
+        dtype=np.float32,
+    )
+    
+
+    affine_pts = np.array(
+        [
+            [np.random.uniform(-affine_factor, affine_factor) * width, np.random.uniform(-affine_factor, affine_factor) * height],
+            [np.random.uniform(1 - affine_factor, 1 + affine_factor) * width, np.random.uniform(-affine_factor, affine_factor) * height],
+            [np.random.uniform(-affine_factor, affine_factor) * width, np.random.uniform(1 - affine_factor, 1 + affine_factor) * height],
+        ],
+        dtype=np.float32,
+    )
+
+    matrix_perspective = cv2.getPerspectiveTransform(perspective_pts, np.array([[0, 0], [width, 0], [0, height], [width, height]], dtype=np.float32))
+    matrix_affine = cv2.getAffineTransform(affine_pts, np.array([[0, 0], [width, 0], [0, height]], dtype=np.float32))
+
+    img_perspective = cv2.warpPerspective(img, matrix_perspective, (width, height), borderMode=cv2.BORDER_REFLECT_101)
+
+    img_perspective_affine = cv2.warpAffine(img_perspective, matrix_affine, (width, height), borderMode=cv2.BORDER_REFLECT_101)
+
+    return img_perspective_affine
+
+
+
+
 
 
 def make_rotate(abs_path:str,
@@ -1567,7 +1681,7 @@ def check_and_change_shape(x,y,shape:tuple)->np.ndarray:
     
        
        
-#########################NEW IMG###########################################
+############################################################IMG API FOR NETWORK###########################################
 
 class Img:
     def __init__(self) -> None:
@@ -1768,7 +1882,8 @@ def trackbar_init(name,range:tuple,window:str='config'):
     cv2.namedWindow(window,cv2.WINDOW_FREERATIO)
     cv2.createTrackbar(name,window,range[0],range[1],call)
     
-    
+
+
 
     
     

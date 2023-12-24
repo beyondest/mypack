@@ -49,8 +49,9 @@ class simple_2classification(torch.nn.Module):
 class lenet5(torch.nn.Module):
     def __init__(self, 
                  class_nums:int = 10,
-                 dropout:float = 0.2) -> None:
+                 dropout:float = 0.3) -> None:
         super().__init__()
+        
         self.dropout = dropout
         #layer 1
         
@@ -64,6 +65,7 @@ class lenet5(torch.nn.Module):
         self.pool2 = torch.nn.AvgPool2d(kernel_size=2,stride=2,padding=0)
         
         #layer3
+        
         self.flatten = torch.nn.Flatten()
         self.fc1 = torch.nn.Linear(16*5*5,120,bias=True)
         self.fc1_act = torch.nn.ReLU()

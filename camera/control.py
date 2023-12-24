@@ -289,6 +289,7 @@ def save_video_camera_init(
     @video_size:0 for camera_size,1 for manual size
     Notice:cv2.VideoCapture(1) can't work for video_save, I don't know why
     '''
+    
     fourcc=cv2.VideoWriter_fourcc(*codec)
     final_path=os.path.join(out_path,name)
     out=cv2.VideoWriter(final_path,fourcc,fps,video_size)

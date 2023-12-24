@@ -142,7 +142,8 @@ def predict_classification(model:torch.nn.Module,
                            weights_path:str,
                            class_yaml_path:str,
                            fmt:str = 'jpg',
-                           if_cvt_rgb:bool = True
+                           custom_trans_cv:None = None,
+                           if_show: bool = False
                            ):
     """Predict single or a folder of images , notice that if input is grayscale, then you have to transform it in trans!!!
 
@@ -167,8 +168,13 @@ def predict_classification(model:torch.nn.Module,
     
     def single_predic(img_path):
         img = cv2.imread(img_path)
-        if if_cvt_rgb:
-            img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
+        if custom_trans_cv is not None:
+            img = custom_trans_cv(img)
+            
+        if if_show:
+            cv2.imshow(f'{img_path}',img)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
         input_tensor = trans(img).unsqueeze(0).to(device)
 
         with torch.no_grad():

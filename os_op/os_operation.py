@@ -51,7 +51,7 @@ def copy_function(src,target):
             
             
             
-def traverse(root_path:str,out_path:str|None,fmt:str|None,deal_func,*args, **kwargs):
+def traverse(root_path:str,out_path:str|None = None,fmt:str|None = 'jpg',deal_func = None,*args, **kwargs):
     """Traverse each file in root_path in fmt by deal_func
     Notice: deal_func must have abs_path,(out_path) in the first position of all params\n
     Args:
