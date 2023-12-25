@@ -8,7 +8,7 @@ from os_op.thread_op import *
 from crc import *
 import img.img_operation as imo
 import cv2
-
+from motor_params import *
     
 def read_and_show(ser:serial.Serial,
                   pdata:pos_data):
@@ -33,14 +33,15 @@ def write_and_show(ser:serial.Serial,
                    adata:action_data,
                    sdata:syn_data,
                    s_or_a:str ,
-                   windows_name:str|None = None,
-                   track_bar_name:str|None = None):
-    if windows_name is not None and track_bar_name is not None:
-        try:
-            
-            adata.setting_voltage_or_rpm = cv2.getTrackbarPos(track_bar_name,windows_name)
-        except:
-            pass
+                   windows_name:str,
+                   debug_trackbar:str,
+                   rel_pitch_trackbar:str,
+                   rel_yaw_trackbar:str
+                   ):
+    
+    adata.setting_voltage_or_rpm = round(cv2.getTrackbarPos(debug_trackbar,windows_name) - debug_track_bar_scope[1]/2)
+    adata.relative_pitch_10000 =round(cv2.getTrackbarPos(rel_pitch_trackbar,windows_name) - pitch_radians_scope[1]/2)
+    adata.relative_yaw_10000 = round(cv2.getTrackbarPos(rel_yaw_trackbar,windows_name) - yaw_radians_scope[1]/2)
     
     a_towrite = adata.convert_action_data_to_bytes(if_part_crc=False)
     
@@ -110,13 +111,12 @@ if __name__ == "__main__":
     
     ser = port_open()
     
-    rpm_scope = (-1000,1000)
-    yaw_radians_scope = (-31415,31415)
-    pitch_radians_scope = (-15708,15708)
     
-    debug_value_scope = rpm_scope
+    
+    
     debug_track_bar = 'tar_rpm'
-    
+    rel_pitch_trackbar = 'rel_rad_pit'
+    rel_yaw_trackbar = 'rel_rad_yaw'
     windows_name = 'portplot'
     
     
@@ -131,12 +131,14 @@ if __name__ == "__main__":
     
     
     cv2.namedWindow('portplot',cv2.WINDOW_AUTOSIZE)
-    imo.trackbar_init('tar_rpm',rpm_scope,windows_name)
-    imo.trackbar_init('tarradpit',pitch_radians_scope,windows_name)
-    imo.trackbar_init('tarradyaw',yaw_radians_scope,windows_name)
-    cv2.setTrackbarPos('tar_rpm',windows_name,50)
-    cv2.setTrackbarPos('tarradpit',windows_name,0)
-    cv2.setTrackbarPos('tarradyaw',windows_name,0)
+    
+    imo.trackbar_init(debug_track_bar,debug_track_bar_scope,windows_name)
+    imo.trackbar_init(rel_pitch_trackbar,pitch_radians_scope,windows_name)
+    imo.trackbar_init(rel_yaw_trackbar,yaw_radians_scope,windows_name)
+    
+    cv2.setTrackbarPos(debug_track_bar,windows_name,int(debug_value_start_pos+debug_track_bar_scope[1]/2))
+    cv2.setTrackbarPos(rel_pitch_trackbar,windows_name,int(pitch_start_pos+pitch_radians_scope[1]/2))
+    cv2.setTrackbarPos(rel_yaw_trackbar,windows_name,int(yaw_start_pos+yaw_radians_scope[1]/2))
 
 
     task1 = task(0.4,
@@ -148,11 +150,11 @@ if __name__ == "__main__":
     
     task2 = task(0.7,
                  for_circle_func=write_and_show,
-                 params_for_circle_func=[ser,adata,sdata,'a',windows_name,debug_track_bar],
+                 params_for_circle_func=[ser,adata,sdata,'a',windows_name,debug_track_bar,rel_pitch_trackbar,rel_yaw_trackbar],
                  )
     
 
-    
+
     
     task1.start()
     task2.start()
