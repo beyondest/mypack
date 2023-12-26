@@ -110,7 +110,7 @@ def show_deinit():
 
 if __name__ == "__main__":
     
-    ser = port_open()
+    ser = port_open(port_abs_path="COM3")
     
     
     
