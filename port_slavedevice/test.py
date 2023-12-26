@@ -1,29 +1,14 @@
-import sys
-sys.path.append('..')
-import img.img_operation as imo
+import msvcrt
 
-import cv2
-from os_op.thread_op import *
+print("Press any key to exit...")
 
-def fu(canvas:imo.Img.canvas,x_list):
-    img = canvas.img.copy()
-    
-    img = imo.add_text(img,'fs',x_list[0])
-    cv2.imshow('ff',img)
-    
+while not msvcrt.kbhit():
+    # 这里可以放入程序的其他逻辑
+    pass
+    # 例如，可以在这里处理其他任务
 
-def deinit():
-    cv2.destroyAllWindows()
+# 从键盘获取按下的键值
+key = msvcrt.getch()
 
-def add(x_list):
-     x_list[0]+=1
-    
-canvas = imo.Img.canvas((100,100))
-x_list = [2]
-
-task1 = task(0.5,
-             for_circle_func=add,
-             params_for_circle_func=[x_list]
-             )
-
-keyboard_control_task([task1],main_func=fu,main_func_params=[canvas,x_list])
+print(f"Key pressed: {key}")
+print("Exiting the program.")

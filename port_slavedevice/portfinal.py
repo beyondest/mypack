@@ -48,8 +48,8 @@ def write_and_show(ser:serial.Serial,
     s_towrite = sdata.convert_syn_data_to_bytes(if_part_crc=False)
     if s_or_a == 's':
         
-        print(f"Writing: {s_towrite}")
-        print(f"crcis:{sdata.crc_v}")
+        #print(f"Writing: {s_towrite}")
+        #print(f"crcis:{sdata.crc_v}")
         ser.write(s_towrite)
     elif s_or_a == 'a':
         
@@ -141,14 +141,14 @@ if __name__ == "__main__":
     cv2.setTrackbarPos(rel_yaw_trackbar,windows_name,int(yaw_start_pos+yaw_radians_scope[1]/2))
 
 
-    task1 = task(0.4,
+    task1 = task(0.05,
                  read_and_show,
                  port_close,
                  [ser,pdata],
                  [ser])
     
     
-    task2 = task(0.7,
+    task2 = task(0.05,
                  for_circle_func=write_and_show,
                  params_for_circle_func=[ser,adata,sdata,'a',windows_name,debug_track_bar,rel_pitch_trackbar,rel_yaw_trackbar],
                  )
@@ -164,8 +164,8 @@ if __name__ == "__main__":
             time_show_x_count = 0
             canvas.img = imo.Img.canvas((700,2000)).img
         show_everything(adata,sdata,pdata,canvas,time_show_x_count,debug_value_scope,windows_name)
-        
-        if cv2.waitKey(100) == ord('q'):
+        cv2.waitKeyEx
+        if cv2.waitKey(1) == ord('q'):
             show_deinit()
             task1.end()
             task2.end()
