@@ -71,6 +71,7 @@ def show_everything(adata:action_data,
                                          pdata.present_debug_value,
                                          debug_value_scope,
                                          4)
+    
     txt_x_step = 250
     img = canvas.img.copy()
     txt_x =1
