@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import sys
-
+sys.path.append('..')
 import img.img_operation as imo
 img = cv2.imread(imo.RED_PATH)
 def on_trackbar(value):

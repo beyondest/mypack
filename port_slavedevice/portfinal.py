@@ -113,7 +113,15 @@ def map_value(value, ori_scope:tuple, target_scope:tuple):
     
     return result
 
-
+def convert_xy_to_relative_radians_10000(x,y,shape_of_img:tuple):
+    """
+    Returns:
+        target_pitch_10000,target_yaw_10000
+    """
+    
+    target_pitch_10000 = round(map_value(y,(0,shape_of_img[0]),(-15608,15708)))
+    target_yaw_10000 = round(map_value(x,(0,shape_of_img[1]),(-31416,31416)))
+    return target_pitch_10000,target_yaw_10000
     
 
     
@@ -151,7 +159,7 @@ if __name__ == "__main__":
     rel_yaw_trackbar = 'rel_rad_yaw'
     windows_name = 'camera_show'
     
-
+    AUTO_AIM = True
     
     time_show_x_count = 0
     global_param = Param()
@@ -182,6 +190,13 @@ if __name__ == "__main__":
     task2.start()
     while 1:
         global_param.img = cac.grab_img(hcamera,pframe_buffer_addr)
+        
+        if AUTO_AIM:
+            center_list = imo.find_armor_beta(global_param.img)
+            if len(center_list) == 1:
+                global_param.adata.target_pitch_10000 , global_param.adata.target_yaw_10000 = \
+                    convert_xy_to_relative_radians_10000(center_list[0][0],center_list[0][1],(1024,1280))
+        
         show_everything(global_param,windows_name)
         
         if cv2.waitKey(1) == ord('q'):
@@ -189,7 +204,7 @@ if __name__ == "__main__":
             show_deinit()
             task1.end()
             task2.end()
-            
+            cac.camera_close(hcamera,pframe_buffer_addr)
             break
     
     

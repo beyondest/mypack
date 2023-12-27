@@ -38,11 +38,34 @@ def target_find(img_ori:np.ndarray,armor_color:str,filter_params:list)->tuple:
     roi_single_list,t4=pre_process2(roi_list,armor_color)
     all_time=t1+t2+t3+t4
     return draw_img,roi_single_list,all_time
+
+def find_armor_beta(img_bgr:np.ndarray,
+                    color = 'red',
+                    trace:bool=False,
+                    if_draw:bool = True)->list:
+    """Find center list of input image
+    If if_draw, only show center and rec only and if only there is single target detected
+    Args:
+        color: red or blue
+
+    Returns:
+        list: Center list
+    """
+    img,_ = pre_process(img_bgr,color)
+    rec_list,_ = find_big_rec(img,trace)
+    center_list = turn_big_rec_list_to_center_points_list(rec_list)
+    if if_draw and len(center_list)==1:
+        cv2.circle(img_bgr,center_list[0],10,(255,0,0),-1)
+        draw_big_rec(rec_list,img_bgr,True)
+    return center_list
+
 ###############################################################
 def pre_process(img_ori:np.ndarray,armor_color:str)->list:
     '''
     armor_color = 'red' or 'blue'\n
     return img_single,time
+    
+    @note input img is BGR !!!
     '''
     img_size_yx=(img_ori.shape[0],img_ori.shape[1])
     
@@ -233,13 +256,16 @@ def find_big_rec(img_single:np.ndarray,trace:bool=True)->list:
     time=(time2-time1)/cv2.getTickFrequency()
     return out_list ,time 
 
-def draw_big_rec(big_rec_list,img_bgr:np.ndarray)->np.ndarray:
+def draw_big_rec(big_rec_list,img_bgr:np.ndarray,if_draw_on_input:bool = False)->np.ndarray:
     '''
     return img_copy_bgr
     '''
     if img_bgr.shape[2]==1:
         img_bgr=cv2.cvtColor(img_bgr,cv2.COLOR_GRAY2BGR)
-    img_copy=img_bgr.copy()
+    if if_draw_on_input:
+        img_copy = img_bgr
+    else:
+        img_copy=img_bgr.copy()
     for i in big_rec_list:
         draw_cont(img_copy,i,2,3)
     return img_copy
@@ -1592,7 +1618,8 @@ def getdia_info(pt0,pt1,angle=0):
         pt3=[x1,y0]
         c_x,c_y,w,h,rec_cont,rec_area=getrec_info(np.array([pt0,pt1,pt2,pt3]))
         return c_x,c_y,w,h,rec_cont,rec_area
-    
+
+
 
 #***********************for yolov5************************#
 def drawrec_and_getcenter(dia_list,ori_img,camera_center):
@@ -1712,7 +1739,13 @@ def draw_crosshair(img:np.ndarray,color:tuple = (0,255,0),thickness :int =2, len
     
     return img
 
-      
+def turn_big_rec_list_to_center_points_list(rec_list:list)->list:
+    out = []
+    for i in rec_list:
+        x,y,_,_,_,_=getrec_info(i)
+        out.append([round(x),round(y)])
+    return out
+  
 ############################################################IMG API FOR NETWORK###########################################
 
 class Img:
