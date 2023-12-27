@@ -191,8 +191,9 @@ if __name__ == "__main__":
     while 1:
         global_param.img = cac.grab_img(hcamera,pframe_buffer_addr)
         
+        
+        center_list = imo.find_armor_beta(global_param.img)
         if AUTO_AIM:
-            center_list = imo.find_armor_beta(global_param.img)
             if len(center_list) == 1:
                 global_param.adata.target_pitch_10000 , global_param.adata.target_yaw_10000 = \
                     convert_xy_to_relative_radians_10000(center_list[0][0],center_list[0][1],(1024,1280))
