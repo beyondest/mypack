@@ -1,14 +1,38 @@
-import msvcrt
+import cv2
+import numpy as np
 
-print("Press any key to exit...")
+a = [12,12]
 
-while not msvcrt.kbhit():
-    # 这里可以放入程序的其他逻辑
-    pass
-    # 例如，可以在这里处理其他任务
+# 回调函数
+def click_event(event, x, y, flags, param):
+    if event == cv2.EVENT_LBUTTONDOWN:
+        # 获取传递给回调函数的额外参数
+        param[0]+=1
+        
+        # 在点击位置绘制一个圆
+        cv2.circle(img, (x, y), 10, (0, 255, 0), -1)
+        
+        # 在图像上显示文本
+        
+        # 更新图像显示
+        cv2.imshow('Image with Circle', img)
 
-# 从键盘获取按下的键值
-key = msvcrt.getch()
+# 创建一个黑色图像
+img = np.zeros((512, 512, 3), np.uint8)
 
-print(f"Key pressed: {key}")
-print("Exiting the program.")
+# 显示原始图像
+cv2.imshow('Image with Circle', img)
+
+# 设置鼠标点击事件的回调函数，并传递额外参数
+param =a
+cv2.setMouseCallback('Image with Circle', click_event, param)
+
+# 等待用户按下 ESC 键退出
+while True:
+    print(param[0])
+    key = cv2.waitKey(1) & 0xFF
+    if key == 27:  # 按下 ESC 键退出
+        break
+
+# 关闭窗口
+cv2.destroyAllWindows()

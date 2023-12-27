@@ -319,8 +319,8 @@ class action_data(data_list):
     def __init__(self,
                  SOF:str = 'A',
                  fire_times:int=1,
-                 relative_pitch_10000:int=0,
-                 relative_yaw_10000:int=0,
+                 target_pitch_10000:int=0,
+                 target_yaw_10000:int=0,
                  target_minute:int=30,
                  target_second:int=30,
                  target_second_frac_10000:int=1234,
@@ -329,19 +329,19 @@ class action_data(data_list):
         
         
         
-        self.label_list = ['SOF','ftimes','relpitch','relyaw','tarmin','tarsec','tarsecfrac','svolrpm']
+        self.label_list = ['SOF','ftimes','tarpitch','taryaw','tarmin','tarsec','tarsecfrac','svolrpm']
         self.SOF = SOF
         self.fire_times = fire_times
-        self.relative_pitch_10000 = relative_pitch_10000
-        self.relative_yaw_10000 = relative_yaw_10000
+        self.target_pitch_10000 = target_pitch_10000
+        self.target_yaw_10000 = target_yaw_10000
         self.target_minute = target_minute
         self.target_second = target_second
         self.target_second_frac_10000 = target_second_frac_10000
         self.setting_voltage_or_rpm = setting_voltage_or_rpm
         self.list = [self.SOF,
                      self.fire_times,
-                     self.relative_pitch_10000,
-                     self.relative_yaw_10000,
+                     self.target_pitch_10000,
+                     self.target_yaw_10000,
                      self.target_minute,
                      self.target_second,
                      self.target_second_frac_10000,
@@ -354,8 +354,8 @@ class action_data(data_list):
         """Calculate crc here if needed
         NO.0 (SOF:char , '<c')                             |     ('A')                      |byte0      bytes 1     total 1
         NO.1 (fire_times:int , '<b')                       |     (-1<=x<=100)               |byte1      bytes 1     total 2 (-1:not control;0:control not fire) 
-        NO.2 (relative_pitch.4*10000:int , '<h')           |     (abs(x)<=15708)            |byte2-3    bytes 2     total 4
-        NO.3 (relative_yaw.4*10000:int , '<h')             |     (abs(x)<=31416)            |byte4-5    bytes 2     total 6
+        NO.2 (target_pitch.4*10000:int , '<h')           |     (abs(x)<=15708)            |byte2-3    bytes 2     total 4
+        NO.3 (target_yaw.4*10000:int , '<h')             |     (abs(x)<=31416)            |byte4-5    bytes 2     total 6
         NO.4 (reach_target_time_minute:int , '<B')         |     (0<=x<60)                  |byte6      bytes 1     total 7
         NO.5 (reach_target_time_second:int , '<B')         |     (0<=x<=60)                 |byte7      bytes 1     total 8
         NO.6 (reach_target_time_second_frac.4*10000 , '<H')|     (0<=x<=10000)              |byte8-9    bytes 2     total 10 
@@ -367,8 +367,8 @@ class action_data(data_list):
         """
         self.list = [self.SOF,
                      self.fire_times,
-                     self.relative_pitch_10000,
-                     self.relative_yaw_10000,
+                     self.target_pitch_10000,
+                     self.target_yaw_10000,
                      self.target_minute,
                      self.target_second,
                      self.target_second_frac_10000,

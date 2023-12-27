@@ -387,14 +387,7 @@ def add_text(img_bgr:np.ndarray,
     if pos==(-1,-1):
         
         pos=(round(img_size_yx[1]/10),round(img_size_yx[0]/10))
-    if img_size_yx==(1024,1280):
-        scale_size=2
-    elif img_size_yx==(256,320):
-        scale_size=0.5
-    elif img_size_yx==(640,640):
-        scale_size=1
-    else:
-        pass
+    
     
     thickness=round(3/(1024*1280)*(img_size_yx[0]*img_size_yx[1]))
     dst=cv2.putText(img_bgr,f'{name}:{value}',pos,font,scale_size,color,thickness)
@@ -1699,7 +1692,27 @@ def draw_time_correlated_value(img:np.ndarray,
     cv2.circle(img,(x,y),point_radians,point_color,-1)
     
     return img
-   
+ 
+ 
+ 
+def draw_crosshair(img:np.ndarray,color:tuple = (0,255,0),thickness :int =2, len_ratio:float = 0.1):
+    hei = img.shape[0]
+    wid = img.shape[1]
+
+    
+    
+    x = round(wid/2)
+    y = round(hei/2)
+    crosshair_wid_length = round(len_ratio * wid)
+    crosshair_hei_length = round(len_ratio * hei)
+
+    cv2.circle(img,(x,y),round(0.01*min(wid,hei)),(0,0,255),-1)
+    cv2.line(img,(x - crosshair_wid_length,y),(x + crosshair_wid_length,y),color,thickness)
+    cv2.line(img,(x,y - crosshair_hei_length),(x,y + crosshair_hei_length),color,thickness)
+    
+    return img
+
+      
 ############################################################IMG API FOR NETWORK###########################################
 
 class Img:

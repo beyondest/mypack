@@ -3,6 +3,8 @@
 
 '''notice that exposure_time is us !!!'''
 
+import sys
+sys.path.append('..')
 import mvsdk
 import cv2
 import numpy as np
