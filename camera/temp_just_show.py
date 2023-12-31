@@ -2,7 +2,7 @@ import control
 import cv2
 import mvsdk
 import numpy as np
-
+import time
 import sys
 sys.path.append('..')
     
@@ -29,14 +29,18 @@ control.camera_open(hcamera)
 pframebuffer_address=control.camera_setframebuffer()
 while (cv2.waitKey(1) & 0xFF) != 27:
     
-    
+    t1 = time.perf_counter()
     pp.img=control.grab_img(hcamera,pframebuffer_address)
     pp.img = cv2.flip(pp.img,0)
     #out.write(dst)
     pp.img = imo.draw_crosshair(pp.img)
     
     cv2.imshow('camera',pp.img) 
-
+    t2 = time.perf_counter()
+    t = t2-t1
+    fps = round(1/t)
+    print('FPS:',fps)
+    
 cv2.destroyAllWindows()
 control.camera_close(hcamera,pframebuffer_address)
 
