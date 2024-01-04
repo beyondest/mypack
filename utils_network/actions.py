@@ -254,10 +254,10 @@ def trans_logits_in_batch_to_result(logits_in_batch:torch.Tensor|np.ndarray)->li
         logits_in_batch (torch.Tensor | np.ndarray): _description_
 
     Raises:
-        TypeError: _description_
+        TypeError: not Tensor neither ndarray
 
     Returns:
-        list: _description_
+        list: [probabilities:torch.Tensor, indices:torch.Tensor]
     """
     if isinstance(logits_in_batch,np.ndarray):
         logits_in_batch = torch.from_numpy(logits_in_batch)
@@ -315,7 +315,7 @@ class Onnx_Engine:
     
     @timing(1)            
     def run(self,output_nodes_name_list:list|None,input_nodes_name_to_npvalue:dict)->list:
-        """
+        """Notice that input value must be numpy value
         Args:
             output_nodes_name_list (list | None): _description_
             input_nodes_name_to_npvalue (dict): _description_
@@ -340,8 +340,8 @@ class Onnx_Engine:
         total_time = 0
         for i,sample in enumerate(val_data_loader):
             X,y = sample
-            logits,once_time = self.run(None,{input_node0_name:X.numpy()})[0]
-            
+            out,once_time = self.run(None,{input_node0_name:X.numpy()})
+            logits = out[0]
             #e.g.:logits.shape = (20,2)=(batchsize,class), torch.max(logits).shape = (2,20),[0] is value, [1].shape = (10,1),[1] =[0,1,...] 
             #use torch.max on logits without softmax is same as torch.max(softmax(logits),dim=1)[1]
             predict = torch.max(logits,dim=1)[1]
@@ -350,6 +350,9 @@ class Onnx_Engine:
             right_nums+=batch_right_nums
             sample_nums += y.size(0)
             total_time+=once_time
+            
+            print(f"batch: {i+1}/{len(val_data_loader)}    batch_accuracy: {batch_right_nums/y.size(0):.2f}    batch_time: {once_time:6f}")
+            
             
         accuracy =right_nums/sample_nums
         avg_time = total_time/len(val_data_loader)
