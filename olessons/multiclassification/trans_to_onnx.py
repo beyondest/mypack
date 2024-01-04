@@ -1,7 +1,6 @@
 import torch.onnx
 import torch
 import torch.onnx
-from torch.quantization import quantize_dynamic, quantize_qat
 
 import sys
 sys.path.append('../..')

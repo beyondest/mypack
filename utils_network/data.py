@@ -945,23 +945,29 @@ class Data:
                            output_abs_path:str,
                            dummy_input:torch.Tensor,
                            trained_weights_path:str|None = None,
+                           input_names = ['input'],
+                           output_names = ['output'],
+                           if_dynamic_batch_size:bool = True,
+                           dynamic_axe_name = 'batch_size',
+                           dynamic_axe_input_id = 0,
+                           dynamic_axe_output_id = 0
                            ):
-          
-        input_names = ['input']
-        output_names = ['output']
-        dynamic_axe_name = 'batch_size'
-        dynamic_axe_input_id = 0
-        dynamic_axe_output_id = 0
-
-        dynamic_axes = {input_names[0]: {dynamic_axe_input_id: dynamic_axe_name}, 
-                        output_names[0]: {dynamic_axe_output_id: dynamic_axe_name}}
+        
+        
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        if if_dynamic_batch_size == False:
+            dynamic_axes = None
+        else:
+            dynamic_axes = {input_names[0]: {dynamic_axe_input_id: dynamic_axe_name}, 
+                            output_names[0]: {dynamic_axe_output_id: dynamic_axe_name}}
 
         if trained_weights_path is not None:
-            model.load_state_dict(torch.load(trained_weights_path))
+            model.load_state_dict(torch.load(trained_weights_path,map_location=device))
+        
         model.eval()
         # quatized model, but notice not all platforms onnx run will support this, so you need to add ATEN_FALLBACK 
         #q_model = quantize_dynamic(model,dtype=torch.qint8)
-
+        
         torch.onnx.export(model=model,                          #model to trans
                         args=dummy_input,                       #dummy input to infer shape
                         f=output_abs_path,                      #output onnx name 
@@ -980,7 +986,7 @@ class Data:
                         autograd_inlining=True)                 #True
 
         print('*****************Save Onnx success***************************')
-
+    
 
     
          

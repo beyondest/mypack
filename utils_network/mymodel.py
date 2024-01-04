@@ -114,17 +114,20 @@ class lenet5(torch.nn.Module):
 
 
 class mobilenet_v2(torch.nn.Module):
-    """input_shape:244*244*3
-
-    Args:
-        torch (_type_): _description_
-    """
     def __init__(self,
                  num_classes:int = 1000,
                  channel_width_alpha:float = 1, 
                  channel_multiply_factor:int = 8,
                  drop_out:float = 0.2
                  ) -> None:
+        """input is 3 * 244 * 244
+
+        Args:
+            num_classes (int, optional): _description_. Defaults to 1000.
+            channel_width_alpha (float, optional): _description_. Defaults to 1.
+            channel_multiply_factor (int, optional): _description_. Defaults to 8.
+            drop_out (float, optional): _description_. Defaults to 0.2.
+        """
         super().__init__()
         
         self.alpha = channel_width_alpha

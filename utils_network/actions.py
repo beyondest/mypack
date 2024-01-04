@@ -340,19 +340,21 @@ class Onnx_Engine:
         total_time = 0
         for i,sample in enumerate(val_data_loader):
             X,y = sample
-            out,once_time = self.run(None,{input_node0_name:X.numpy()})
+            X = X.numpy()
+            
+            out,once_time = self.run(None,{input_node0_name:X})
             logits = out[0]
-            #e.g.:logits.shape = (20,2)=(batchsize,class), torch.max(logits).shape = (2,20),[0] is value, [1].shape = (10,1),[1] =[0,1,...] 
-            #use torch.max on logits without softmax is same as torch.max(softmax(logits),dim=1)[1]
-            predict = torch.max(logits,dim=1)[1]
+            
+    
+            predict = torch.max(torch.from_numpy(logits),dim=1)[1]
             #caclulate
             batch_right_nums = (predict == y).sum().item()
             right_nums+=batch_right_nums
             sample_nums += y.size(0)
             total_time+=once_time
-            
-            print(f"batch: {i+1}/{len(val_data_loader)}    batch_accuracy: {batch_right_nums/y.size(0):.2f}    batch_time: {once_time:6f}")
-            
+
+            print(f"batch: {i+1}/{len(val_data_loader)}    batch_accuracy: {batch_right_nums/y.size(0):.2f}    batch_time: {once_time:6f} ")
+          
             
         accuracy =right_nums/sample_nums
         avg_time = total_time/len(val_data_loader)
