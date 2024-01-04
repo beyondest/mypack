@@ -4,10 +4,13 @@ sys.path.append('..')
 import os_op.os_operation as oso
 import os
 import time
-from torch.utils.tensorboard import SummaryWriter
+
 from torchvision import transforms,datasets
 import cv2
 from utils_network.data import *
+import onnx
+import onnxruntime
+from os_op.decorator import *
 
 def train_classification(   model:torch.nn.Module,
                             train_dataloader,
@@ -27,7 +30,7 @@ def train_classification(   model:torch.nn.Module,
     '''
     if show_step_interval<0, will not show step
     '''
-    
+    from torch.utils.tensorboard import SummaryWriter
     if not os.path.exists(log_folder_path):
         os.mkdir(log_folder_path)
     writer = SummaryWriter(log_dir=log_folder_path)
@@ -237,14 +240,149 @@ def validation(model:torch.nn.Module,
             right_nums+=batch_right_nums
             sample_nums += y.size(0)
             print(f"batch: {i+1}/{len(val_dataloader)}    batch_accuracy: {batch_right_nums/y.size(0):.2f}")
+            
         accuracy =right_nums/sample_nums
+        
     print(f'Total accuracy: {accuracy:.2f}')
             
     
     
+def trans_logits_in_batch_to_result(logits_in_batch:torch.Tensor|np.ndarray)->list:
+    """Trans logits of model output to [probabilities, indices]
 
+    Args:
+        logits_in_batch (torch.Tensor | np.ndarray): _description_
 
+    Raises:
+        TypeError: _description_
+
+    Returns:
+        list: _description_
+    """
+    if isinstance(logits_in_batch,np.ndarray):
+        logits_in_batch = torch.from_numpy(logits_in_batch)
+    elif isinstance(logits_in_batch,torch.Tensor):
+        pass
+    else:
+        raise TypeError(f'Wrong input type {type(logits_in_batch)}, only support torch tensor and numpy')
+    max_result = torch.max(torch.softmax(logits_in_batch,dim=1),dim=1)
+    max_probabilities = max_result.values
+    max_indices = max_result.indices
     
+    return max_probabilities,max_indices
+
+
+
+
+class Onnx_Engine:
+    class Standard_Data:
+        def __init__(self) -> None:
+            self.result = 0
+            
+        def save_results(self,results:np.ndarray):
+            self.result = results
+        
+        
+    def __init__(self,
+                 filename) -> None:
+        """Config here if you wang more
+
+        Args:
+            filename (_type_): _description_
+        """
+        
+        custom_session_options = onnxruntime.SessionOptions()
+        custom_session_options.enable_profiling = False          #enable or disable profiling of model
+        #custom_session_options.execution_mode =onnxruntime.ExecutionMode.ORT_PARALLEL       #ORT_PARALLEL | ORT_SEQUENTIAL
+        custom_session_options.add_session_config_entry('session.load_model_format', 'ONNX') # or 'ORT'
+        #custom_session_options.inter_op_num_threads = 2                                     #default is 0
+        #custom_session_options.intra_op_num_threads = 2                                     #default is 0
+        #custom_session_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_ALL # DISABLE_ALL |ENABLE_BASIC |ENABLE_EXTENDED |ENABLE ALL
+        custom_providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']       # if gpu, cuda first, or will use cpu
+        
+        
+        self.user_data = self.Standard_Data()  
+        self.ort_session = onnxruntime.InferenceSession(filename,
+                                                        sess_options=custom_session_options,
+                                                        providers=custom_providers)
+
+    def standard_callback(results:np.ndarray, user_data:Standard_Data,error:str):
+        if error:
+            print(error)
+        else:
+            user_data.save_results(results)
+    
+    
+    @timing(1)            
+    def run(self,output_nodes_name_list:list|None,input_nodes_name_to_npvalue:dict)->list:
+        """
+        Args:
+            output_nodes_name_list (list | None): _description_
+            input_nodes_name_to_npvalue (dict): _description_
+
+        Returns:
+            list: [[node1_output,node2_output,...],reference time]
+        """
+        return self.ort_session.run(output_nodes_name_list,input_nodes_name_to_npvalue)
+    
+    
+    def eval_run_node0(self,val_data_loader:DataLoader,input_node0_name:str):
+        """Warning: only surpport one input and one output; \n
+                    only support dynamic onnx model ???    
+
+        Args:
+            val_data_loader (DataLoader): _description_
+            input_node0_name (str): _description_
+        """
+           
+        right_nums = 0
+        sample_nums = 0
+        total_time = 0
+        for i,sample in enumerate(val_data_loader):
+            X,y = sample
+            logits,once_time = self.run(None,{input_node0_name:X.numpy()})[0]
+            
+            #e.g.:logits.shape = (20,2)=(batchsize,class), torch.max(logits).shape = (2,20),[0] is value, [1].shape = (10,1),[1] =[0,1,...] 
+            #use torch.max on logits without softmax is same as torch.max(softmax(logits),dim=1)[1]
+            predict = torch.max(logits,dim=1)[1]
+            #caclulate
+            batch_right_nums = (predict == y).sum().item()
+            right_nums+=batch_right_nums
+            sample_nums += y.size(0)
+            total_time+=once_time
+            
+        accuracy =right_nums/sample_nums
+        avg_time = total_time/len(val_data_loader)
+        
+        print(f'Total accuracy: {accuracy:.2f}')
+        print(f'Total time: {total_time:2f}')
+        print(f'Avg_batch_time: {avg_time}')
+            
+    @timing(1)
+    def run_asyc(self,output_nodes_name_list:list|None,input_nodes_name_to_npvalue:dict):
+        """Will process output of model in callback , config callback here
+
+        Args:
+            output_nodes_name_list (list | None): _description_
+            input_nodes_name_to_npvalue (dict): _description_
+
+        Returns:
+            [None,once reference time]
+        """
+        self.ort_session.run_async(output_nodes_name_list,
+                                             input_nodes_name_to_npvalue,
+                                             callback=self.standard_callback,
+                                             user_data=self.user_data)
+        return None
+
     
         
+
+
+   
+
+        
+        
+
+
 

@@ -6,6 +6,8 @@ import cv2
 sys.path.append('../..')
 from os_op.decorator import *
 from params import *
+from utils_network.actions import *
+
 onnx_filename = 'best71.onnx'
 
 custom_session_options = onnxruntime.SessionOptions()
@@ -38,7 +40,7 @@ ort_session = onnxruntime.InferenceSession(onnx_filename,
                                            providers=custom_providers)
 
 
-ori_img = cv2.imread('test.png')
+ori_img = cv2.imread('3.png')
 
 
 
@@ -49,6 +51,7 @@ idx_to_class = Data.get_file_info_from_yaml(class_yaml_path)
 img = write_img_trans(ori_img)
 input_tensor = val_trans(img)
 input_tensor = torch.unsqueeze(input_tensor,0)
+final_input= input_tensor.numpy()
 #
 
 
@@ -65,7 +68,7 @@ def run():
     input_all = torch.cat((input_tensor,input_tensor2),dim=0)
 '''
 
-    outputs = ort_session.run(['output'], {'input': input_tensor.numpy()})
+    outputs = ort_session.run(['output'], {'input': final_input})
     #outputs = ort_session.run_async(None,{'input':input_tensor.numpy()},callback=standard_callback,user_data=user_data)
     return outputs
 
@@ -75,11 +78,10 @@ print(f'avg_spending: {elapesd_time:2f}')
 
 logits = result[0]
 
-softmax_result = torch.softmax((torch.from_numpy(logits)),dim=1)
-max_probability = torch.max(softmax_result,dim=1).values
-max_index = np.argmax(logits,axis=1)
-print(max_probability)
-print(max_index)
+p,i = trans_logits_in_batch_to_result(logits)
 
+
+print(p)
+print(i)
 
 

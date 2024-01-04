@@ -35,6 +35,8 @@ def run():
                         custom_trans_cv=write_img_trans,
                         if_show=False,
                         if_print=True)
+    
+    
 _,at = run()
 print(at)
 
