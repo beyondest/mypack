@@ -34,7 +34,6 @@ while (cv2.waitKey(1) & 0xFF) != 27:
     pp.img = cv2.flip(pp.img,0)
     #out.write(dst)
     pp.img = imo.draw_crosshair(pp.img)
-    
     cv2.imshow('camera',pp.img) 
     t2 = time.perf_counter()
     t = t2-t1
@@ -42,6 +41,7 @@ while (cv2.waitKey(1) & 0xFF) != 27:
     print('FPS:',fps)
     
 cv2.destroyAllWindows()
+
 control.camera_close(hcamera,pframebuffer_address)
 
 #out.release()

@@ -366,13 +366,16 @@ def pre_process3(roi_transform_list:list,armor_color:str='red',strech_max:int|No
 #####################################################################
 
 
-def cvshow(img:np.ndarray):
+def cvshow(img:np.ndarray,windows_name:str='show'):
     '''
     use to show quickly
     '''
-    cv2.imshow('d',img)
-    cv2.waitKey(0)
+    cv2.imshow(windows_name,img)
+    while True:
+        if (cv2.waitKey(0) & 0xff )== 27:
+            break
     cv2.destroyAllWindows()
+    
 def cvshow2(abs_path:str,nothing:None):
     
     img = cv2.imread(abs_path)

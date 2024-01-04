@@ -143,7 +143,9 @@ def predict_classification(model:torch.nn.Module,
                            class_yaml_path:str,
                            fmt:str = 'jpg',
                            custom_trans_cv:None = None,
-                           if_show: bool = False
+                           if_show: bool = False,
+                           if_draw_and_show_result:bool = False,
+                           if_print:bool = True
                            ):
     """Predict single or a folder of images , notice that if input is grayscale, then you have to transform it in trans!!!
 
@@ -167,16 +169,17 @@ def predict_classification(model:torch.nn.Module,
         mode = 'multi_img'
     
     def single_predic(img_path):
-        img = cv2.imread(img_path)
+        img_ori = cv2.imread(img_path)
         if custom_trans_cv is not None:
-            img = custom_trans_cv(img)
+            img = custom_trans_cv(img_ori)
+        else:
+            img = img_ori   
             
         if if_show:
-            cv2.imshow(f'{img_path}',img)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            imo.cvshow(img,f'{img_path}')
         input_tensor = trans(img).unsqueeze(0).to(device)
 
+        
         with torch.no_grad():
             logits = model(input_tensor)
             
@@ -184,8 +187,13 @@ def predict_classification(model:torch.nn.Module,
             probablility = torch.max(probablility_tensor).item()
             predict_class_id = torch.argmax(probablility_tensor).item()
             predict_class = idx_to_class[predict_class_id]
-            print(f'{img_path} is {predict_class}, with probablity {probablility:.2f}')
-    
+            if if_print:
+                print(f'{img_path} is {predict_class}, with probablity {probablility:.2f}')
+
+        if if_draw_and_show_result:
+            imo.add_text(img_ori,f'class:{predict_class} | probability: {probablility}',0,color=(0,255,0))
+            imo.cvshow(img_ori,'result')
+            
     if mode == 'single_img':
         single_predic(img_path)
         
@@ -232,6 +240,11 @@ def validation(model:torch.nn.Module,
         accuracy =right_nums/sample_nums
     print(f'Total accuracy: {accuracy:.2f}')
             
-        
+    
+    
+
+
+    
+    
         
 

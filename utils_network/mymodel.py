@@ -47,6 +47,11 @@ class simple_2classification(torch.nn.Module):
 
 
 class lenet5(torch.nn.Module):
+    """lenet5 just for test \n
+    Input:
+        28*28 grayscale
+    
+    """
     def __init__(self, 
                  class_nums:int = 10,
                  dropout:float = 0.3) -> None:
@@ -144,6 +149,7 @@ class mobilenet_v2(torch.nn.Module):
                                      kernel_size=3,
                                      stride=2
                                      )
+        
         self.bn1 = torch.nn.BatchNorm2d(self.first_channels)
         self.relu1 = torch.nn.ReLU6(inplace=True)   
         

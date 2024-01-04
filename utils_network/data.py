@@ -1159,7 +1159,7 @@ class PIL_img_transform:
 
 if __name__=="__main__":
     path="../pth_folder/test.pth"
-    def func0(x):
+    '''def func0(x):
         return np.power(x,2)
 
     def func1(x):
@@ -1175,7 +1175,7 @@ if __name__=="__main__":
     f=Data.plt_figure()
     ax_index=f.plt_point(x=hp_pts[:,0],y=hp_pts[:,1],xlim=(-5,5),ylim=(-5,5))
     plt.show()
-    
+    '''
     
     
 

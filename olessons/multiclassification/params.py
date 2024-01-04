@@ -9,7 +9,7 @@ import pandas as pd
 from torchvision import transforms,datasets
 from img.img_operation import *
 
-
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 dataset_path='./data'
 
 img_path='./test.png'
@@ -41,6 +41,23 @@ def cv_trans_val(img:np.ndarray):
     img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     _,img = cv2.threshold(img,0,255,cv2.THRESH_OTSU)
     return img
+
+
+def write_img_trans(img:np.ndarray)->np.ndarray:
+    img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    #_,img = cv2.threshold(img,0,255,cv2.THRESH_OTSU)
+    
+    img = cv2.bitwise_not(img)
+    img = cv2.dilate(img,np.ones((int(img.shape[0]/80),int(img.shape[1]/80))),iterations=3)
+    
+    img = cv2.resize(img,(28,28))
+    _,img = cv2.threshold(img,0,255,cv2.THRESH_OTSU)
+    return img
+
+def show_train_trans(abs_path):
+    img = Image.open(abs_path)
+    img = cv_trans_train(img)
+
 
 # Notice : original mnist dataset img is grayscale!!!
 
