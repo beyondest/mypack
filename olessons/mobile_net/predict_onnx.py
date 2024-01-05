@@ -8,7 +8,7 @@ from os_op.decorator import *
 from params import *
 from utils_network.actions import *
 from torch.utils.data import Subset
-onnx_filename = 'static83.onnx'
+onnx_filename = dynamic_model_path
 
 
 ori_img = cv2.imread('res/cat.1.jpg')
@@ -37,10 +37,10 @@ if mode == 0:
 else:
     
     dataset = datasets.ImageFolder(val_root_path,val_trans)
-    subset = Subset(dataset,[i for i in range(500)])
+    subset = get_subset(dataset,[500,1000])
     data_loader = DataLoader(subset,
                              1,
-                             False)
+                             True)
     
     onnx_engine.eval_run_node0(data_loader,
                                'input')

@@ -12,6 +12,8 @@ import cv2
 from motor_params import *
 import camera.control as cac
 import camera.mvsdk as mvsdk
+from utils_network.mymath import map_value
+
 
 class Param:
     def __init__(self) -> None:
@@ -101,17 +103,6 @@ def show_everything(param:Param,
 def show_deinit():
     cv2.destroyAllWindows()
     
-def map_value(value, ori_scope:tuple, target_scope:tuple):
-    
-    if value > ori_scope[1] or value <ori_scope[0]:
-        raise TypeError("Input value out of scope")
-    from_range = ori_scope[1] - ori_scope[0]
-    to_range = target_scope[1] - target_scope[0]
-    
-    scaled_value = (value - ori_scope[0]) / from_range
-    result = target_scope[0] + scaled_value * to_range
-    
-    return result
 
 def convert_xy_to_relative_radians_10000(x,y,shape_of_img:tuple):
     """

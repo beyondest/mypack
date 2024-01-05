@@ -380,8 +380,72 @@ class Onnx_Engine:
                                              user_data=self.user_data)
         return None
 
-    
+
+class Onnx_Processer:
+    def __init__(self) -> None:
+        pass
+    @classmethod
+    def preprocess(cls,
+                   ori_onnx_model_path:str,
+                   output_onnx_model_path:str):
+        oq.quant_pre_process(ori_onnx_model_path,
+                            output_onnx_model_path,
+                            skip_optimization=False,
+                            skip_onnx_shape=False,              # works best for non-Transformer
+                            skip_symbolic_shape=False,           # works best for Transformer
+                            auto_merge=False,
+                            verbose=True,
+                            save_as_external_data=False,
+                            all_tensors_to_one_file=False,
+                            external_data_location='./external_data'
+                            )
+        print(f'preprocessed onnx model saved to {output_onnx_model_path}')
         
+    @classmethod
+    def quantize(cls,
+                 preprocess_onnx_model_path:str,
+                 output_onnx_model_path:str,
+                 calibration_data_loader:str|None=None,
+                 mode:str = 'static',
+                 input_nodes_name_list:list = ['input']):
+        
+
+        
+
+        if mode == 'dynamic':
+            #dynamic run slowest on my CPU
+            oq.quantize_dynamic(preprocess_onnx_model_path,
+                                output_onnx_model_path,
+                                op_types_to_quantize=None, # ['Conov',...]
+                                per_channel=False,          # can improve accuracy
+                                reduce_range=True,         # use for U8S8 format on non-VNNI machine and for per_channel_True on non-VNNI machine
+                                weight_type=oq.QuantType.QUInt8,
+                                nodes_to_quantize=None,    # [Node1, Node2 ,...]
+                                nodes_to_exclude=None,     # [Node1, Node2, ...]
+                                use_external_data_format=False # if save tensors in other files and not in model file
+                                )
+
+        elif mode == 'static' :
+            if calibration_data_loader is None:
+                raise TypeError("calibration data loader can not be None")
+            dreader = Dataloader_CalibrationDataReader(calibration_data_loader,input_nodes_name_list)
+            
+            oq.quantize_static(preprocess_onnx_model_path,
+                            output_onnx_model_path,
+                            calibration_data_reader=dreader,    # use Trans to get datareader from dataloader
+                            quant_format=oq.QuantFormat.QDQ,    # QDQ or QO, QO is larger ?
+                            op_types_to_quantize=None,  
+                            per_channel=True,                   # accuracy up
+                            reduce_range=True,                  # speed up
+                            activation_type=oq.QuantType.QUInt8,        #U8S8 run fastest in my CPU
+                            weight_type=oq.QuantType.QInt8,
+                            nodes_to_quantize=None,
+                            nodes_to_exclude=None,
+                            use_external_data_format=None,                      
+                            calibrate_method=oq.CalibrationMethod.MinMax        # define scaler by max and min of calibration dataset
+                            )
+
+                
 
 
    

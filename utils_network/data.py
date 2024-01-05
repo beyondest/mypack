@@ -19,7 +19,7 @@ import yaml
 from torch.utils.data import Dataset,DataLoader
 import gzip
 import pickle
-from torch.utils.data import TensorDataset
+from torch.utils.data import TensorDataset,Subset
 from tqdm import tqdm
 from concurrent.futures import ProcessPoolExecutor
 import concurrent.futures
@@ -30,6 +30,9 @@ import cv2
 from PIL import Image
 import img.img_operation as imo
 import PIL as pil
+import onnxruntime.quantization as oq
+
+
 def tp(*args):
     for i in args:
         print(type(i))
@@ -976,7 +979,8 @@ class Data:
                         input_names=input_names,                #input names list,its length depends on how many input your model have
                         output_names=output_names,              #output names list
                         training=torch.onnx.TrainingMode.EVAL,  #EVAL or TRAINING or Preserve(depends on if you specify model.eval or model.train)
-                        operator_export_type=torch.onnx.OperatorExportTypes.ONNX,   #ONNX or this, ATEN means array tensor library of Pytorch
+                        operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK,   #ONNX or ONNX_FALLTROUGH or ONNX_ATEN_FALLBACK  or ONNX_ATEN, ATEN means array tensor library of Pytorch
+                                                                                         # fallback to onnx or fallthrough to aten, use aten as default, aten better for torch, but onnx is more compat
                         opset_version=17,                       #7<thix<17
                         do_constant_folding=True,               #True
                         dynamic_axes = dynamic_axes,            #specify which axe is dynamic
@@ -985,10 +989,12 @@ class Data:
                         export_modules_as_functions=False,      #False
                         autograd_inlining=True)                 #True
 
-        print('*****************Save Onnx success***************************')
+        print(f'ori_onnx model saved to {output_abs_path}')
     
 
+def get_subset(dataset:Dataset,scope:list = [0,500])->Dataset:
     
+    return Subset(dataset,[i for i in range(scope[0],scope[1])])  
          
 class dataset_hdf5(Dataset):
     """Will reshape y to item
@@ -1034,7 +1040,27 @@ class dataset_pkl(Dataset):
         return torch.from_numpy(X),torch.from_numpy(y)
    
             
+
+class Dataloader_CalibrationDataReader(oq.CalibrationDataReader):
+    def __init__(self,dr:DataLoader,input_nodes_name_list:list = ['input']) -> None:
         
+        super().__init__()
+        self.dr = dr
+        self.iter = iter(self.dr)
+        if input_nodes_name_list != ['input']:
+            raise TypeError(f"Not support other input nodes yet {input_nodes_name_list}, Please implement here")
+        
+    def get_next(self) -> dict:
+        try:
+            data = next(self.iter)
+        
+        except StopIteration:
+            return None
+        
+        return {"input": data[0].numpy()}
+
+
+    
 
 class Mouse_trajectory_capture:
     '''

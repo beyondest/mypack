@@ -4,7 +4,11 @@ from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
 import inspect
 from utils_network.data import *
+
+
 import math
+
+
 class field:
     def __init__(self,func,dim,scope:list,num:int=100) -> None:
         x_list=[]
@@ -90,6 +94,19 @@ class myfunc:
 
 
    
+
+def map_value(value, ori_scope:tuple, target_scope:tuple):
     
+    if value > ori_scope[1] or value <ori_scope[0]:
+        raise TypeError("Input value out of scope")
+    from_range = ori_scope[1] - ori_scope[0]
+    to_range = target_scope[1] - target_scope[0]
+    
+    scaled_value = (value - ori_scope[0]) / from_range
+    result = target_scope[0] + scaled_value * to_range
+    
+    return result
+
+
 if __name__=='__main__':
     pass
