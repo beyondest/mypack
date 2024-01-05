@@ -141,7 +141,7 @@ def train_classification(   model:torch.nn.Module,
     
 def predict_classification(model:torch.nn.Module,
                            trans,
-                           img_path:str,
+                           img_or_folder_path:str,
                            weights_path:str,
                            class_yaml_path:str,
                            fmt:str = 'jpg',
@@ -155,7 +155,7 @@ def predict_classification(model:torch.nn.Module,
     Args:
         model (torch.nn.Module): _description_
         trans (_type_): _description_
-        img_path (str): _description_
+        img_or_folder_path (str): _description_
         weights_path (str): _description_
         class_yaml_path (str): _description_
         fmt (str, optional): _description_. Defaults to 'jpg'.
@@ -165,45 +165,47 @@ def predict_classification(model:torch.nn.Module,
     idx_to_class = Data.get_file_info_from_yaml(class_yaml_path)
     model.load_state_dict(torch.load(weights_path,map_location=device))
     model.eval()
-    suffix = os.path.splitext(img_path)[-1]
+    suffix = os.path.splitext(img_or_folder_path)[-1]
     if suffix != '':
         mode = 'single_img'
     else:
         mode = 'multi_img'
     
-    def single_predic(img_path):
-        img_ori = cv2.imread(img_path)
+    def single_predic(img_or_folder_path):
+        img_ori = cv2.imread(img_or_folder_path)
         if custom_trans_cv is not None:
             img = custom_trans_cv(img_ori)
         else:
             img = img_ori   
             
         if if_show:
-            imo.cvshow(img,f'{img_path}')
+            imo.cvshow(img,f'{img_or_folder_path}')
         input_tensor = trans(img).unsqueeze(0).to(device)
 
         
         with torch.no_grad():
+            t1 = time.perf_counter()
             logits = model(input_tensor)
-            
+            t2 = time.perf_counter()
+            t = t2-t1
             probablility_tensor = torch.nn.functional.softmax(logits,dim=1)[0]
             probablility = torch.max(probablility_tensor).item()
             predict_class_id = torch.argmax(probablility_tensor).item()
             predict_class = idx_to_class[predict_class_id]
             if if_print:
-                print(f'{img_path} is {predict_class}, with probablity {probablility:.2f}')
+                print(f'{img_or_folder_path} is {predict_class}, with probablity {probablility:.2f}    spend_time: {t:6f}')
 
         if if_draw_and_show_result:
             imo.add_text(img_ori,f'class:{predict_class} | probability: {probablility}',0,color=(0,255,0))
             imo.cvshow(img_ori,'result')
             
     if mode == 'single_img':
-        single_predic(img_path)
+        single_predic(img_or_folder_path)
         
 
         
     else:
-        oso.traverse(img_path,None,deal_func=single_predic,fmt=fmt)
+        oso.traverse(img_or_folder_path,None,deal_func=single_predic,fmt=fmt)
         
         
         
@@ -230,8 +232,10 @@ def validation(model:torch.nn.Module,
         sample_nums = 0
         for i,sample in enumerate(val_dataloader):
             X,y = sample
+            t1 = time.perf_counter()
             logits = model(X.to(device))
-            
+            t2 = time.perf_counter()
+            t = t2-t1
             #e.g.:logits.shape = (20,2)=(batchsize,class), torch.max(logits).shape = (2,20),[0] is value, [1].shape = (10,1),[1] =[0,1,...] 
             #use torch.max on logits without softmax is same as torch.max(softmax(logits),dim=1)[1]
             predict = torch.max(logits,dim=1)[1]
@@ -239,7 +243,7 @@ def validation(model:torch.nn.Module,
             batch_right_nums = (predict == y.to(device)).sum().item()
             right_nums+=batch_right_nums
             sample_nums += y.size(0)
-            print(f"batch: {i+1}/{len(val_dataloader)}    batch_accuracy: {batch_right_nums/y.size(0):.2f}")
+            print(f"batch: {i+1}/{len(val_dataloader)}    batch_accuracy: {batch_right_nums/y.size(0):.2f}      batch_time: {t:6f}")
             
         accuracy =right_nums/sample_nums
         
@@ -405,7 +409,7 @@ class Onnx_Processer:
     def quantize(cls,
                  preprocess_onnx_model_path:str,
                  output_onnx_model_path:str,
-                 calibration_data_loader:str|None=None,
+                 calibration_data_loader:DataLoader|None=None,
                  mode:str = 'static',
                  input_nodes_name_list:list = ['input']):
         
@@ -444,8 +448,30 @@ class Onnx_Processer:
                             use_external_data_format=None,                      
                             calibrate_method=oq.CalibrationMethod.MinMax        # define scaler by max and min of calibration dataset
                             )
-
-                
+        else:
+            raise TypeError(f"Wrong mode {mode}, only support dynamic and static")
+        
+        print(f'quantized_model saved to {output_onnx_model_path}')
+        
+    @classmethod
+    def end_to_end_opt_qua(cls,
+                           ori_onnx_model_path:str,
+                           output_onnx_model_path:str,
+                           calibration_data_loader:DataLoader|None,
+                           mode:str = 'static',
+                           input_nodes_name_list:list = ['input']):
+        
+        tmp = 'tmp.onnx'
+        cls.preprocess(ori_onnx_model_path,tmp)
+        cls.quantize(tmp,
+                     output_onnx_model_path,
+                     calibration_data_loader,
+                     mode=mode,
+                     input_nodes_name_list=input_nodes_name_list)
+        os.remove(tmp)
+        
+        print(f'remove {tmp}')
+        print(f'ALL DONE')
 
 
    

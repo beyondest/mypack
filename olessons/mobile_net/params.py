@@ -29,12 +29,8 @@ predict_dog_path = './res/dog3.jpg'
 trained_weights_path = './weights/new/weights.0.83.9.pth'
 
 
-fixed_model_path = './fixed83.onnx'
-nonfixed_model_path = './nonfixed83.onnx'
-infer_model_path = './fixed_infer83.onnx'
-dynamic_model_path = './fixed_infer_dynamic83.onnx'
-static_model_path = './fixed_infer_static83.onnx'
-
+ori_onnx_path = './weights/83.onnx'
+opt_qua_onnx_path = './weights/Q83.onnx'
 
 
 
