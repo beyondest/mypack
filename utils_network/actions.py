@@ -11,7 +11,8 @@ from utils_network.data import *
 import onnx
 import onnxruntime
 from os_op.decorator import *
-
+from onnxruntime.tools.convert_onnx_models_to_ort import convert_onnx_models_to_ort
+from pathlib import Path
 def train_classification(   model:torch.nn.Module,
                             train_dataloader,
                             val_dataloader,
@@ -288,20 +289,29 @@ class Onnx_Engine:
         
         
     def __init__(self,
-                 filename) -> None:
+                 filename:str,
+                 if_offline:bool = False,
+                 if_onnx:bool = True) -> None:
         """Config here if you wang more
 
         Args:
             filename (_type_): _description_
         """
-        
         custom_session_options = onnxruntime.SessionOptions()
+        
+        if if_offline:
+            custom_session_options.optimized_model_filepath = filename
+            
         custom_session_options.enable_profiling = False          #enable or disable profiling of model
         #custom_session_options.execution_mode =onnxruntime.ExecutionMode.ORT_PARALLEL       #ORT_PARALLEL | ORT_SEQUENTIAL
-        custom_session_options.add_session_config_entry('session.load_model_format', 'ONNX') # or 'ORT'
+        if if_onnx:
+            
+            custom_session_options.add_session_config_entry('session.load_model_format', 'ONNX') # or 'ORT'
+        else:
+            custom_session_options.add_session_config_entry('session.load_model_format', 'ORT') 
         #custom_session_options.inter_op_num_threads = 2                                     #default is 0
         #custom_session_options.intra_op_num_threads = 2                                     #default is 0
-        #custom_session_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_ALL # DISABLE_ALL |ENABLE_BASIC |ENABLE_EXTENDED |ENABLE ALL
+        custom_session_options.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_ALL # DISABLE_ALL |ENABLE_BASIC |ENABLE_EXTENDED |ENABLE_ALL
         custom_providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']       # if gpu, cuda first, or will use cpu
         
         
@@ -390,8 +400,9 @@ class Onnx_Processer:
         pass
     @classmethod
     def preprocess(cls,
-                   ori_onnx_model_path:str,
-                   output_onnx_model_path:str):
+                   ori_onnx_model_path:str):
+        output_onnx_model_path = oso.add_suffix_to_end(ori_onnx_model_path,'_opt')
+        
         oq.quant_pre_process(ori_onnx_model_path,
                             output_onnx_model_path,
                             skip_optimization=False,
@@ -403,20 +414,19 @@ class Onnx_Processer:
                             all_tensors_to_one_file=False,
                             external_data_location='./external_data'
                             )
+        
         print(f'preprocessed onnx model saved to {output_onnx_model_path}')
         
     @classmethod
     def quantize(cls,
                  preprocess_onnx_model_path:str,
-                 output_onnx_model_path:str,
                  calibration_data_loader:DataLoader|None=None,
                  mode:str = 'static',
                  input_nodes_name_list:list = ['input']):
         
 
-        
-
         if mode == 'dynamic':
+            output_onnx_model_path = oso.add_suffix_to_end(preprocess_onnx_model_path,'_Qdynamic')
             #dynamic run slowest on my CPU
             oq.quantize_dynamic(preprocess_onnx_model_path,
                                 output_onnx_model_path,
@@ -430,6 +440,8 @@ class Onnx_Processer:
                                 )
 
         elif mode == 'static' :
+            output_onnx_model_path = oso.add_suffix_to_end(preprocess_onnx_model_path,'_Qstatic')
+            
             if calibration_data_loader is None:
                 raise TypeError("calibration data loader can not be None")
             dreader = Dataloader_CalibrationDataReader(calibration_data_loader,input_nodes_name_list)
@@ -456,23 +468,32 @@ class Onnx_Processer:
     @classmethod
     def end_to_end_opt_qua(cls,
                            ori_onnx_model_path:str,
-                           output_onnx_model_path:str,
                            calibration_data_loader:DataLoader|None,
                            mode:str = 'static',
-                           input_nodes_name_list:list = ['input']):
-        
-        tmp = 'tmp.onnx'
-        cls.preprocess(ori_onnx_model_path,tmp)
+                           input_nodes_name_list:list = ['input'],
+                           if_save_tmp_refenrece:bool = False):
+        name = oso.get_name(ori_onnx_model_path)
+        tmp = oso.add_suffix_to_end(ori_onnx_model_path,'_opt')
+        cls.preprocess(ori_onnx_model_path)
         cls.quantize(tmp,
-                     output_onnx_model_path,
                      calibration_data_loader,
                      mode=mode,
                      input_nodes_name_list=input_nodes_name_list)
-        os.remove(tmp)
         
-        print(f'remove {tmp}')
+        if not if_save_tmp_refenrece:
+            os.remove(tmp)
+            print(f'remove {tmp}')
+        
         print(f'ALL DONE')
 
+    
+    @classmethod
+    def trans_onnx_to_ort(cls,onnx_path:str):
+        raise TypeError("Not implemented yet")
+        output_path = oso.change_ext_only(onnx_path,'.ort')
+        output_path = Path(output_path)
+        
+        convert_onnx_models_to_ort(onnx_path,output_path)
 
    
 

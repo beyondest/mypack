@@ -11,7 +11,7 @@ from torch.utils.data import Subset
 
 
 
-onnx_filename = opt_qua_onnx_path
+onnx_filename = './weights/83_opt_Qstatic.onnx'
 single_file_path = './res/dog1.jpg'
 
 """
@@ -30,7 +30,7 @@ mode = 1
 
 
 if mode == 0:
-    onnx_engine = Onnx_Engine(onnx_filename)
+    onnx_engine = Onnx_Engine(onnx_filename,if_offline=False)
 
     ori_img = cv2.imread(single_file_path)
 
@@ -47,7 +47,7 @@ if mode == 0:
     
     
 elif mode ==1:
-    onnx_engine = Onnx_Engine(onnx_filename)
+    onnx_engine = Onnx_Engine(onnx_filename,if_offline=False)
 
     dataset = datasets.ImageFolder(val_root_path,val_trans)
     subset = get_subset(dataset,[1000,1500])

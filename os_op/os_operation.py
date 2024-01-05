@@ -206,6 +206,13 @@ def delete_file(file_path:str):
         print(f'something wrong when remove file {file_path}')
         
 
+def add_suffix_to_end(path:str,suffix:str)->str:
+    base,ext = os.path.splitext(path)
+    
+    return f"{base}{suffix}{ext}"
 
+def change_ext_only(path:str,ext_new:str = '.ttt')->str:
+    base,ext = os.path.splitext(path)
+    return f'{base}{ext_new}'
 
 
